@@ -1,0 +1,7 @@
+// G10 Systematic FX — Pine Script Strategy
+// Placeholder: port the Python backtest logic here for TradingView Pro+ publishing
+// Signal stack: rate differentials · momentum · CFTC sentiment · vol regime filter
+//@version=5
+strategy("G10 Systematic FX", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=2)
+
+// TODO: implement signal construction and entries
