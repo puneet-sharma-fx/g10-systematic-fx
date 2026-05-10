@@ -80,20 +80,18 @@ BACKTEST: dict = {
     },
 }
 
-# ── CFTC COT ──────────────────────────────────────────────────────────────────
-# Non-commercial (speculative) net positions from CFTC legacy futures-only report.
-# Key = currency, value = substring to match in the Market_and_Exchange_Names column.
+# ── CFTC COT (Traders in Financial Futures — TFF report) ─────────────────────
+# Leveraged Money (hedge-fund / CTA) net positioning from the CFTC TFF report.
+# Key = currency, value = exact prefix to match in Market_and_Exchange_Names.
+# SEK and NOK are not traded on CME, so they are omitted (signal falls through).
 COT_MARKETS: dict[str, str] = {
     "EUR": "EURO FX",
-    "GBP": "BRITISH POUND STERLING",
+    "GBP": "BRITISH POUND",
     "AUD": "AUSTRALIAN DOLLAR",
-    "NZD": "NEW ZEALAND DOLLAR",
+    "NZD": "NZ DOLLAR",
     "JPY": "JAPANESE YEN",
     "CAD": "CANADIAN DOLLAR",
     "CHF": "SWISS FRANC",
-    "SEK": "SWEDISH KRONA",
-    "NOK": "NORWEGIAN KRONE",
 }
-# CFTC publishes annual zip files at this URL pattern
-CFTC_HIST_URL = "https://www.cftc.gov/dea/newcot/dea{year}futures.zip"
-CFTC_CURRENT_URL = "https://www.cftc.gov/dea/newcot/deacot.zip"
+# Annual TFF zip pattern (text format, ~30KB per year compressed)
+CFTC_HIST_URL = "https://www.cftc.gov/files/dea/history/fut_fin_txt_{year}.zip"

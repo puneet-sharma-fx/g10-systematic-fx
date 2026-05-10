@@ -15,13 +15,36 @@ A weekly-rebalanced cross-sectional long/short strategy on 9 G10 pairs. Three in
 |---|---|---|
 | **Carry** (40%) | FRED — central-bank policy rates | Smoothed annualised rate differential (base − quote) |
 | **Momentum** (35%) | yfinance — daily FX spot | Dual-window time-series momentum (21d fast vs 63d slow) |
-| **COT positioning** (25%) | CFTC weekly Commitments of Traders | Speculative net positioning, normalised by open interest |
+| **COT positioning** (25%) | CFTC TFF — Leveraged Money | Hedge-fund / CTA net positioning, normalised by open interest |
 | **Vol regime** (gate) | yfinance / FRED — VIX | Step-function exposure scalar at the 80th and 95th VIX percentiles |
 
 **Universe:** EURUSD, GBPUSD, AUDUSD, NZDUSD, USDJPY, USDCAD, USDCHF, USDSEK, USDNOK
 **Rebalance:** Weekly (Friday close)
 **Position sizing:** Vol-targeted, top-3 long / bottom-3 short
-**Target:** Sharpe > 1.0, net of 2 bps round-trip cost
+
+---
+
+## v1 backtest result (2013–2024, walk-forward, net of 2 bps round-trip cost)
+
+![Equity Curve](reports/equity_curve.png)
+
+| Metric | Value |
+|---|---|
+| Annualised Return | +1.13% |
+| Annualised Vol | 11.13% |
+| Sharpe | 0.16 |
+| Sortino | 0.23 |
+| Max Drawdown | -28.08% |
+| Hit Rate | 49.68% |
+| Periods | 626 weekly |
+
+**Honest read of v1.** This is the baseline result before any signal-construction iteration. Each individual signal (carry, momentum, COT) prints near-zero Sharpe in isolation on this 9-pair universe — the framework is sound, but the naive signal definitions don't have edge in post-GFC G10 FX. The strategy performs well in trending USD regimes (2021, 2024 → Sharpe >1) and gets shredded in reversal years (2013, 2017, 2020). Tracking known gaps publicly so the next commits show the iteration trail.
+
+**Next iterations (in order):**
+- Vol-normalise carry: `(rate_diff) / σ_pair` instead of raw rate differential
+- Switch momentum to time-series rather than cross-sectional (9 pairs is too thin for cross-section)
+- Replace the binary VIX regime filter with a smooth scalar
+- Re-weight signals by realised IC rather than priors
 
 ---
 
