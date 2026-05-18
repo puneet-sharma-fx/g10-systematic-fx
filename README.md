@@ -48,6 +48,18 @@ A weekly-rebalanced cross-sectional long/short strategy on 9 G10 pairs. Three in
 
 ---
 
+## Individual Strategies
+
+Numbered, self-contained single-purpose strategies that emerged from research adjacent to the main framework. Each is a standalone module under [`strategies/`](strategies/) with its own data layer, position rule, and reproducible script.
+
+See [`strategies/README.md`](strategies/README.md) for the full list with results, charts, and caveats.
+
+| # | Title | Net Sharpe |
+|---|---|---|
+| 1 | Δ(EU 2Y − US 2Y) → next-day EURUSD | 2.75 |
+
+---
+
 ## Repo structure
 
 ```
@@ -70,6 +82,14 @@ g10-systematic-fx/
 │   ├── costs.py                    Turnover-based bps cost model
 │   ├── metrics.py                  Sharpe, Sortino, max drawdown, Calmar, hit rate
 │   └── engine.py                   Walk-forward driver (3y train / 6m test, expanding)
+│
+├── strategies/
+│   └── strat_01_eu_us_2y_diff_eurusd.py   Strategy #1: Δ(EU 2Y − US 2Y) → next-day EURUSD
+│
+├── notebooks/
+│   └── explore_2y_diff_vs_eurusd.py       Exploration regression behind Strategy #1
+│
+├── reports/                                Equity curves and result PNGs
 │
 ├── live/track_record/
 │   └── track-record.csv            Weekly P&L log (committed every Friday post-launch)
