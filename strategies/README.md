@@ -64,3 +64,26 @@ Numbered, self-contained single-purpose strategies. Each is a standalone module 
 **Data sources.** US 2Y: TradingView `TVC:US02Y`. GB 2Y: TradingView `TVC:GB02Y` (both via `tvDatafeed`). GBPUSD: yfinance `GBPUSD=X`.
 
 **Script.** [`strat_02_gb_us_2y_diff_gbpusd.py`](strat_02_gb_us_2y_diff_gbpusd.py)
+
+---
+
+## Strategy #3 — Δ(AU 2Y − US 2Y) → next-day AUDUSD
+
+**Signal.** `pos[t+1] = sign(d_diff[t])` where `d_diff[t] = (AU_2Y − US_2Y)[t] − (AU_2Y − US_2Y)[t−1]`. Long AUDUSD when the rate differential moved in AU's favour today.
+
+**Result** (2010–2024, daily):
+
+| Metric | **Net (after 5 pips RT)** | Gross | Passive long AUDUSD |
+|---|---|---|---|
+| Annualised Return | **+12.75%** | +21.15% | −1.91% |
+| Annualised Vol | 10.45% | 10.44% | 10.56% |
+| **Sharpe** | **1.22** | 2.03 | −0.18 |
+| Max Drawdown | −23.03% | −19.96% | −47.96% |
+| Hit Rate | 52.60% | 55.00% | 50.27% |
+| Cumulative (15y) | +564% | +2,344% | −31.78% |
+
+![Strategy #3 equity curve](../reports/strategy_03_au_us_2y_diff_audusd.png)
+
+**Data sources.** US 2Y: TradingView `TVC:US02Y`. AU 2Y: TradingView `TVC:AU02Y` (both via `tvDatafeed`). AUDUSD: yfinance `AUDUSD=X`.
+
+**Script.** [`strat_03_au_us_2y_diff_audusd.py`](strat_03_au_us_2y_diff_audusd.py)

@@ -58,6 +58,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 |---|---|---|
 | 1 | Δ(EU 2Y − US 2Y) → next-day EURUSD | 2.75 |
 | 2 | Δ(GB 2Y − US 2Y) → next-day GBPUSD | 1.50 |
+| 3 | Δ(AU 2Y − US 2Y) → next-day AUDUSD | 1.22 |
 
 ---
 
