@@ -1,0 +1,63 @@
+# Plan: Cross-G10 Extension of the Rate-Differential Signal
+
+**Date**: May 2026
+**Status**: Planning — implementation in progress (Strategies #2–#9)
+
+---
+
+## Why
+
+Strategy #1 — `Δ(EU 2Y − US 2Y) → next-day EURUSD` — printed **Sharpe 2.75 net of 5 pips round-trip cost** over 2010–2024 (gross 3.45, hit rate 56%). Strong enough to ask the natural follow-up question:
+
+> Does this generalise across G10, or is it an EURUSD-specific quirk?
+
+This document is the plan to answer that.
+
+---
+
+## What
+
+Apply the same structure as Strategy #1 to the 8 remaining G10 pairs. For each pair with base currency **X** and quote currency **Y**:
+
+- **Signal**: `d_diff[t] = Δ(X_2Y − Y_2Y)` — the daily change in the 2-year rate differential on day *t*
+- **Position**: `pos[t+1] = sign(d_diff[t])`, ±1 at full notional
+- **Hold**: 1 trading day
+- **Cost**: 5 pips round-trip (= 2.5 pips per unit of |Δpos|)
+- **Period**: 2010-01-01 → 2024-12-31
+
+| # | Pair | Signal | Status |
+|---|---|---|---|
+| 1 | EURUSD | Δ(EU 2Y − US 2Y) | ✅ Sharpe 2.75 net |
+| 2 | GBPUSD | Δ(GB 2Y − US 2Y) | Planned |
+| 3 | AUDUSD | Δ(AU 2Y − US 2Y) | Planned |
+| 4 | NZDUSD | Δ(NZ 2Y − US 2Y) | Planned |
+| 5 | USDJPY | Δ(US 2Y − JP 2Y) | Planned |
+| 6 | USDCAD | Δ(US 2Y − CA 2Y) | Planned |
+| 7 | USDCHF | Δ(US 2Y − CH 2Y) | Planned |
+| 8 | USDSEK | Δ(US 2Y − SE 2Y) | Planned |
+| 9 | USDNOK | Δ(US 2Y − NO 2Y) | Planned |
+
+---
+
+## Outcomes we're trying to distinguish
+
+- **Generalises across G10** → real cross-currency signal worth deploying systematically.
+- **Works for some pairs but not others** → tells us which FX markets the rate-path signal actually drives (likely majors > commodity > smaller crosses).
+- **Only EURUSD holds up** → the headline result was probably a timing-alignment or pair-specific quirk; back to the drawing board.
+
+---
+
+## Output for each strategy
+
+- One numbered, standalone strategy module: `strategies/strat_0N_<base>_<quote>_2y_diff.py`
+- Equity curve PNG in `reports/`
+- Result row in the comparison table in [`strategies/README.md`](README.md)
+
+---
+
+## Caveats inherited from Strategy #1
+
+- **Timing-alignment risk** — Yahoo's FX close timestamp may not align with rate fixings, inflating apparent edge.
+- **Sub-period stability** untested across regimes (ZIRP era 2010–2016 vs post-ZIRP 2022+).
+- **Realisable cost varies by pair liquidity** — 5 pips is fair for EURUSD but tight for USDNOK. May need pair-specific cost assumptions later.
+- **Position sizing is full ±1**, no vol-targeting yet. Production deployment would need vol scaling and capacity testing.
