@@ -57,6 +57,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | # | Title | Net Sharpe |
 |---|---|---|
 | 1 | Δ(EU 2Y − US 2Y) → next-day EURUSD | 2.75 |
+| 2 | Δ(GB 2Y − US 2Y) → next-day GBPUSD | 1.50 |
 
 ---
 

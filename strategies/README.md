@@ -41,3 +41,26 @@ Numbered, self-contained single-purpose strategies. Each is a standalone module 
 - Position sizing is full ±1 with no vol-targeting; production deployment would require vol scaling and capacity testing.
 
 **Script.** [`strat_01_eu_us_2y_diff_eurusd.py`](strat_01_eu_us_2y_diff_eurusd.py)
+
+---
+
+## Strategy #2 — Δ(GB 2Y − US 2Y) → next-day GBPUSD
+
+**Signal.** `pos[t+1] = sign(d_diff[t])` where `d_diff[t] = (GB_2Y − US_2Y)[t] − (GB_2Y − US_2Y)[t−1]`. Long GBPUSD when the rate differential moved in GB's favour today.
+
+**Result** (2010–2024, daily):
+
+| Metric | **Net (after 5 pips RT)** | Gross | Passive long GBPUSD |
+|---|---|---|---|
+| Annualised Return | **+13.14%** | +18.14% | −1.20% |
+| Annualised Vol | 8.74% | 8.73% | 8.83% |
+| **Sharpe** | **1.50** | 2.08 | −0.14 |
+| Max Drawdown | −25.76% | −21.13% | −37.49% |
+| Hit Rate | 52.95% | 54.82% | 49.25% |
+| Cumulative (15y) | +624% | +1,473% | −21.94% |
+
+![Strategy #2 equity curve](../reports/strategy_02_gb_us_2y_diff_gbpusd.png)
+
+**Data sources.** US 2Y: TradingView `TVC:US02Y`. GB 2Y: TradingView `TVC:GB02Y` (both via `tvDatafeed`). GBPUSD: yfinance `GBPUSD=X`.
+
+**Script.** [`strat_02_gb_us_2y_diff_gbpusd.py`](strat_02_gb_us_2y_diff_gbpusd.py)
