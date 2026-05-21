@@ -189,3 +189,30 @@ Numbered, self-contained single-purpose strategies. Each is a standalone module 
 **Data sources.** US 2Y: TradingView `TVC:US02Y`. CH 2Y: TradingView `TVC:CH02Y` (both via `tvDatafeed`). USDCHF: yfinance `USDCHF=X`.
 
 **Script.** [`strat_07_us_ch_2y_diff_usdchf.py`](strat_07_us_ch_2y_diff_usdchf.py)
+
+---
+
+## Strategy #8 — Δ(US 2Y − SE 2Y) → next-day USDSEK
+
+**Signal.** `pos[t+1] = sign(d_diff[t])` where `d_diff[t] = (US_2Y − SE_2Y)[t] − (US_2Y − SE_2Y)[t−1]`. Long USDSEK when the rate differential moved in US's favour today.
+
+**Note.** SE 2Y data on TradingView starts 2012-08-14, so this backtest covers ~12 years.
+
+**Result** (2012–2024, daily):
+
+| Metric | **Net (after 5 pips RT)** | Gross | Passive long USDSEK |
+|---|---|---|---|
+| Annualised Return | **+21.35%** | +22.12% | +4.42% |
+| Annualised Vol | 10.00% | 10.00% | 10.16% |
+| **Sharpe** | **2.13** | 2.21 | 0.44 |
+| Max Drawdown | −15.67% | −14.93% | −21.90% |
+| Hit Rate | 54.38% | 54.50% | 51.10% |
+| Cumulative | +1,347% | +1,497% | +65.0% |
+
+![Strategy #8 equity curve](../reports/strategy_08_us_se_2y_diff_usdsek.png)
+
+**Important read on the cost model.** Net Sharpe is 2.13, but the cumulative cost drag is only 9.9% — much lower than the ~90% for EURUSD over a similar window. The reason is structural: USDSEK trades around 10.5 spot, so the same "5 pips" round-trip cost is fractionally **10× smaller** than for EURUSD at spot 1.10 (≈0.24 bps vs ≈2.27 bps per unit traded). In real markets, USDSEK spreads are *wider* in absolute pip terms than EURUSD's (USDSEK is less liquid), so the 5-pip assumption is **optimistic for SEK**. A realistic 10-pip RT cost would meaningfully degrade the net Sharpe. Treat the headline number with that caveat.
+
+**Data sources.** US 2Y: TradingView `TVC:US02Y`. SE 2Y: TradingView `TVC:SE02Y` (both via `tvDatafeed`). USDSEK: yfinance `USDSEK=X`.
+
+**Script.** [`strat_08_us_se_2y_diff_usdsek.py`](strat_08_us_se_2y_diff_usdsek.py)

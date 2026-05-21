@@ -63,6 +63,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | 5 | Δ(US 2Y − JP 2Y) → next-day USDJPY | 1.44 |
 | 6 | Δ(US 2Y − CA 2Y) → next-day USDCAD | 2.06 |
 | 7 | Δ(US 2Y − CH 2Y) → next-day USDCHF | 0.00 |
+| 8 | Δ(US 2Y − SE 2Y) → next-day USDSEK | 2.13 ⚠️ |
 
 ---
 
