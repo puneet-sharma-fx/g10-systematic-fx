@@ -60,6 +60,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | 2 | Δ(GB 2Y − US 2Y) → next-day GBPUSD | 1.50 |
 | 3 | Δ(AU 2Y − US 2Y) → next-day AUDUSD | 1.22 |
 | 4 | Δ(NZ 2Y − US 2Y) → next-day NZDUSD | 0.92 |
+| 5 | Δ(US 2Y − JP 2Y) → next-day USDJPY | 1.44 |
 
 ---
 

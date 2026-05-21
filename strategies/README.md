@@ -114,3 +114,28 @@ Numbered, self-contained single-purpose strategies. Each is a standalone module 
 **Data sources.** US 2Y: TradingView `TVC:US02Y`. NZ 2Y: TradingView `TVC:NZ02Y` (both via `tvDatafeed`). NZDUSD: yfinance `NZDUSD=X`.
 
 **Script.** [`strat_04_nz_us_2y_diff_nzdusd.py`](strat_04_nz_us_2y_diff_nzdusd.py)
+
+---
+
+## Strategy #5 — Δ(US 2Y − JP 2Y) → next-day USDJPY
+
+**Signal.** `pos[t+1] = sign(d_diff[t])` where `d_diff[t] = (US_2Y − JP_2Y)[t] − (US_2Y − JP_2Y)[t−1]`. Long USDJPY when the rate differential moved in US's favour today.
+
+**Result** (2010–2024, daily):
+
+| Metric | **Net (after 5 pips RT)** | Gross | Passive long USDJPY |
+|---|---|---|---|
+| Annualised Return | +12.81% | +18.99% | +3.87% |
+| Annualised Vol | 8.92% | 8.91% | 9.19% |
+| **Sharpe** | **1.44** | 2.13 | 0.42 |
+| **Max Drawdown** | **−59.21%** | −34.51% | −20.48% |
+| Hit Rate | 50.88% | 53.34% | 52.03% |
+| Cumulative (15y) | +586% | +1,690% | +70.7% |
+
+![Strategy #5 equity curve](../reports/strategy_05_us_jp_2y_diff_usdjpy.png)
+
+**Read.** Strong Sharpe but worst max drawdown of any pair so far at −59%. JPY pairs are prone to fat-tail rate-policy shocks (2016 BoJ NIRP, 2022 BoJ defence, 2024 carry unwind) that compound through the daily-flip rule. Calmar ratio is poor; sizing would need to be smaller in production to keep DD reasonable.
+
+**Data sources.** US 2Y: TradingView `TVC:US02Y`. JP 2Y: TradingView `TVC:JP02Y` (both via `tvDatafeed`). USDJPY: yfinance `USDJPY=X`.
+
+**Script.** [`strat_05_us_jp_2y_diff_usdjpy.py`](strat_05_us_jp_2y_diff_usdjpy.py)
