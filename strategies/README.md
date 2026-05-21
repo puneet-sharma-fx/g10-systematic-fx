@@ -164,3 +164,28 @@ Numbered, self-contained single-purpose strategies. Each is a standalone module 
 **Data sources.** US 2Y: TradingView `TVC:US02Y`. CA 2Y: TradingView `TVC:CA02Y` (both via `tvDatafeed`). USDCAD: yfinance `USDCAD=X`.
 
 **Script.** [`strat_06_us_ca_2y_diff_usdcad.py`](strat_06_us_ca_2y_diff_usdcad.py)
+
+---
+
+## Strategy #7 — Δ(US 2Y − CH 2Y) → next-day USDCHF
+
+**Signal.** `pos[t+1] = sign(d_diff[t])` where `d_diff[t] = (US_2Y − CH_2Y)[t] − (US_2Y − CH_2Y)[t−1]`. Long USDCHF when the rate differential moved in US's favour today.
+
+**Result** (2010–2024, daily):
+
+| Metric | **Net (after 5 pips RT)** | Gross | Passive long USDCHF |
+|---|---|---|---|
+| Annualised Return | −0.00% | +7.54% | −0.36% |
+| Annualised Vol | 9.76% | 9.75% | 9.82% |
+| **Sharpe** | **0.00** | 0.77 | −0.04 |
+| **Max Drawdown** | **−65.90%** | −33.56% | −37.83% |
+| Hit Rate | 48.79% | 51.32% | 51.37% |
+| Cumulative (15y) | −7.3% | +199% | −12.4% |
+
+![Strategy #7 equity curve](../reports/strategy_07_us_ch_2y_diff_usdchf.png)
+
+**Read.** First strategy that doesn't work. Even gross Sharpe (0.77) is the weakest among the seven so far — the rate-diff signal has the least predictive power for USDCHF. Two structural reasons: (1) the SNB EUR/CHF floor removal of 15 Jan 2015 caused a one-day CHF appreciation of ~20%, which would have crushed any positioning at that moment regardless of rate signal; (2) CHF is a textbook safe-haven currency that often moves on global risk sentiment rather than rate differentials, especially during the post-GFC era of negative Swiss rates.
+
+**Data sources.** US 2Y: TradingView `TVC:US02Y`. CH 2Y: TradingView `TVC:CH02Y` (both via `tvDatafeed`). USDCHF: yfinance `USDCHF=X`.
+
+**Script.** [`strat_07_us_ch_2y_diff_usdchf.py`](strat_07_us_ch_2y_diff_usdchf.py)
