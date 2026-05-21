@@ -61,6 +61,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | 3 | Δ(AU 2Y − US 2Y) → next-day AUDUSD | 1.22 |
 | 4 | Δ(NZ 2Y − US 2Y) → next-day NZDUSD | 0.92 |
 | 5 | Δ(US 2Y − JP 2Y) → next-day USDJPY | 1.44 |
+| 6 | Δ(US 2Y − CA 2Y) → next-day USDCAD | 2.06 |
 
 ---
 

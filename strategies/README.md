@@ -139,3 +139,28 @@ Numbered, self-contained single-purpose strategies. Each is a standalone module 
 **Data sources.** US 2Y: TradingView `TVC:US02Y`. JP 2Y: TradingView `TVC:JP02Y` (both via `tvDatafeed`). USDJPY: yfinance `USDJPY=X`.
 
 **Script.** [`strat_05_us_jp_2y_diff_usdjpy.py`](strat_05_us_jp_2y_diff_usdjpy.py)
+
+---
+
+## Strategy #6 — Δ(US 2Y − CA 2Y) → next-day USDCAD
+
+**Signal.** `pos[t+1] = sign(d_diff[t])` where `d_diff[t] = (US_2Y − CA_2Y)[t] − (US_2Y − CA_2Y)[t−1]`. Long USDCAD when the rate differential moved in US's favour today.
+
+**Result** (2010–2024, daily):
+
+| Metric | **Net (after 5 pips RT)** | Gross | Passive long USDCAD |
+|---|---|---|---|
+| Annualised Return | +15.19% | +20.89% | +2.38% |
+| Annualised Vol | 7.39% | 7.37% | 7.58% |
+| **Sharpe** | **2.06** | 2.83 | 0.31 |
+| Max Drawdown | −14.82% | −12.33% | −17.42% |
+| Hit Rate | 53.16% | 55.79% | 50.65% |
+| Cumulative (15y) | +911% | +2,349% | +38.4% |
+
+![Strategy #6 equity curve](../reports/strategy_06_us_ca_2y_diff_usdcad.png)
+
+**Read.** Strongest result so far after EURUSD. Makes economic sense: Canada-US is the most rate-correlated G10 pair (deep cross-border trade, synchronised central-bank cycles), and USDCAD is the third-most-liquid G10 spot, so 5 pips is a realistic cost.
+
+**Data sources.** US 2Y: TradingView `TVC:US02Y`. CA 2Y: TradingView `TVC:CA02Y` (both via `tvDatafeed`). USDCAD: yfinance `USDCAD=X`.
+
+**Script.** [`strat_06_us_ca_2y_diff_usdcad.py`](strat_06_us_ca_2y_diff_usdcad.py)

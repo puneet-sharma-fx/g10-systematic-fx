@@ -32,7 +32,7 @@ Apply the same structure as Strategy #1 to the 8 remaining G10 pairs. For each p
 | 3 | AUDUSD | Δ(AU 2Y − US 2Y) | ✅ Sharpe 1.22 net |
 | 4 | NZDUSD | Δ(NZ 2Y − US 2Y) | ✅ Sharpe 0.92 net (gross 1.96) |
 | 5 | USDJPY | Δ(US 2Y − JP 2Y) | ✅ Sharpe 1.44 net (−59% DD) |
-| 6 | USDCAD | Δ(US 2Y − CA 2Y) | Planned |
+| 6 | USDCAD | Δ(US 2Y − CA 2Y) | ✅ Sharpe 2.06 net |
 | 7 | USDCHF | Δ(US 2Y − CH 2Y) | Planned |
 | 8 | USDSEK | Δ(US 2Y − SE 2Y) | Planned |
 | 9 | USDNOK | Δ(US 2Y − NO 2Y) | Planned |
