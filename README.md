@@ -64,6 +64,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | 6 | Δ(US 2Y − CA 2Y) → next-day USDCAD | 2.06 |
 | 7 | Δ(US 2Y − CH 2Y) → next-day USDCHF | 0.00 |
 | 8 | Δ(US 2Y − SE 2Y) → next-day USDSEK | 2.13 ⚠️ |
+| 9 | Δ(US 2Y − NO 2Y) → next-day USDNOK | deferred — NO 2Y data unavailable |
 
 ---
 

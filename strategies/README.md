@@ -2,6 +2,31 @@
 
 Numbered, self-contained single-purpose strategies. Each is a standalone module with its own data layer, position rule, and reproducible script.
 
+## Summary table
+
+All Strategies #1–#8 use the same rule: `pos[t+1] = sign(Δ(base 2Y − quote 2Y)[t])`, held 1 day, 5 pips round-trip cost.
+
+| # | Pair | Period | Net Sharpe | Net Ann. Return | Max DD | Notes |
+|---|---|---|---|---|---|---|
+| 1 | EURUSD | 2010–2024 | **2.75** | +22.9% | −15.3% | Headline result |
+| 2 | GBPUSD | 2010–2024 | 1.50 | +13.1% | −25.8% | |
+| 3 | AUDUSD | 2010–2024 | 1.22 | +12.8% | −23.0% | |
+| 4 | NZDUSD | 2016–2024 | 0.92 | +9.0% | −32.7% | Short history (NZ 2Y from 2016) |
+| 5 | USDJPY | 2010–2024 | 1.44 | +12.8% | **−59.2%** | JPY fat-tails crush DD |
+| 6 | USDCAD | 2010–2024 | **2.06** | +15.2% | −14.8% | Best risk-adjusted after #1 |
+| 7 | USDCHF | 2010–2024 | **0.00** | −0.0% | −65.9% | Signal fails on CHF (SNB peg, safe-haven dynamics) |
+| 8 | USDSEK | 2012–2024 | 2.13 ⚠️ | +21.4% | −15.7% | Cost-model artefact (spot ~10.5 makes 5-pip cost fractionally tiny) |
+| 9 | USDNOK | — | — | — | — | Deferred: NO 2Y unavailable on TVC |
+
+**Key observations.**
+- 5 of 8 net Sharpes are >1.0; signal generalises broadly across G10 majors.
+- CHF is the clear failure — signal has no edge there.
+- JPY shows strong Sharpe with brutal drawdown; not deployable as-is.
+- SEK number is inflated by the fixed-pip cost model interacting with high spot level.
+- USDCAD is the second-most-credible result (low DD, deep market, fair cost assumption).
+
+See [`PLAN.md`](PLAN.md) for the original plan and hypotheses being tested.
+
 ---
 
 ## Strategy #1 — Δ(EU 2Y − US 2Y) → next-day EURUSD

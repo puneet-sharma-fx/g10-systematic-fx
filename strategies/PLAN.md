@@ -35,7 +35,7 @@ Apply the same structure as Strategy #1 to the 8 remaining G10 pairs. For each p
 | 6 | USDCAD | Δ(US 2Y − CA 2Y) | ✅ Sharpe 2.06 net |
 | 7 | USDCHF | Δ(US 2Y − CH 2Y) | ✅ Sharpe 0.00 net — signal fails on CHF |
 | 8 | USDSEK | Δ(US 2Y − SE 2Y) | ✅ Sharpe 2.13 net (⚠️ 5-pip cost optimistic at SEK spot ~10.5) |
-| 9 | USDNOK | Δ(US 2Y − NO 2Y) | Planned |
+| 9 | USDNOK | Δ(US 2Y − NO 2Y) | ⚠️ Deferred — NO 2Y unavailable on TradingView (only NO10Y available). To revisit with Norges Bank API or accept tenor mismatch. |
 
 ---
 
