@@ -87,3 +87,30 @@ Numbered, self-contained single-purpose strategies. Each is a standalone module 
 **Data sources.** US 2Y: TradingView `TVC:US02Y`. AU 2Y: TradingView `TVC:AU02Y` (both via `tvDatafeed`). AUDUSD: yfinance `AUDUSD=X`.
 
 **Script.** [`strat_03_au_us_2y_diff_audusd.py`](strat_03_au_us_2y_diff_audusd.py)
+
+---
+
+## Strategy #4 — Δ(NZ 2Y − US 2Y) → next-day NZDUSD
+
+**Signal.** `pos[t+1] = sign(d_diff[t])` where `d_diff[t] = (NZ_2Y − US_2Y)[t] − (NZ_2Y − US_2Y)[t−1]`. Long NZDUSD when the rate differential moved in NZ's favour today.
+
+**Note.** NZ 2Y data on TradingView only goes back to 2016-04-27, so this backtest covers ~8.5 years instead of the full 15 years of #1–#3.
+
+**Result** (2016–2024, daily):
+
+| Metric | **Net (after 5 pips RT)** | Gross | Passive long NZDUSD |
+|---|---|---|---|
+| Annualised Return | +9.04% | +19.30% | −1.71% |
+| Annualised Vol | 9.88% | 9.85% | 9.99% |
+| **Sharpe** | **0.92** | 1.96 | −0.17 |
+| Max Drawdown | −32.72% | −25.31% | −25.96% |
+| Hit Rate | 49.93% | 52.89% | 50.15% |
+| Cumulative | +116% | +442% | −18.0% |
+
+![Strategy #4 equity curve](../reports/strategy_04_nz_us_2y_diff_nzdusd.png)
+
+**Read.** First strategy to drop below Sharpe 1 net. Gross Sharpe 1.96 confirms the signal still has meaningful predictive content for NZDUSD; the 92% cumulative cost drag is what kills it. 5 pips round-trip may be optimistic for NZDUSD (less liquid than EUR/GBP majors).
+
+**Data sources.** US 2Y: TradingView `TVC:US02Y`. NZ 2Y: TradingView `TVC:NZ02Y` (both via `tvDatafeed`). NZDUSD: yfinance `NZDUSD=X`.
+
+**Script.** [`strat_04_nz_us_2y_diff_nzdusd.py`](strat_04_nz_us_2y_diff_nzdusd.py)
