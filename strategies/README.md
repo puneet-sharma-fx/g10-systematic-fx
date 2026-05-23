@@ -29,6 +29,39 @@ See [`PLAN.md`](PLAN.md) for the original plan and hypotheses being tested.
 
 ---
 
+## Signal diagnostics across all 8 pairs
+
+For each strategy we ran the underlying predictive regression:
+
+```
+next-day FX return   ~   α + β · Δ(base 2Y − quote 2Y)
+```
+
+![Regression panels for all 8 pairs](../reports/regressions_all_pairs.png)
+
+| # | Pair | β | R² | t-stat | N | Strategy Sharpe (net) |
+|---|---|---|---|---|---|---|
+| 1 | EURUSD | +0.0325 | **7.03%** | +17.2 | 3,909 | 2.75 |
+| 2 | GBPUSD | +0.0184 | 2.95% | +10.9 | 3,909 | 1.50 |
+| 3 | AUDUSD | +0.0255 | 3.45% | +11.8 | 3,909 | 1.22 |
+| 4 | NZDUSD | +0.0210 | 4.07% | +9.8 | 2,263 | 0.92 |
+| 5 | USDJPY | +0.0350 | **7.27%** | +17.5 | 3,909 | 1.44 |
+| 6 | USDCAD | +0.0298 | **6.35%** | +16.3 | 3,909 | 2.06 |
+| 7 | USDCHF | +0.0101 | 0.99% | +6.3 | 3,909 | 0.00 |
+| 8 | USDSEK | +0.0223 | 3.42% | +10.7 | 3,229 | 2.13 |
+
+**Reads.**
+- **All 8 βs are positive** — direction is UIP-consistent across the entire G10 universe.
+- **All p-values are effectively zero** (t-stats from 6.3 to 17.5) — the signal is statistically real everywhere.
+- **R² ranges 1.0% to 7.3%** — high for daily FX. Median 3.7%.
+- **CHF outlier explained**: lowest β (0.0101) and lowest R² (0.99%) — the signal genuinely has little informational content for CHF, consistent with the strategy printing Sharpe 0.00.
+- **EURUSD, USDJPY, USDCAD** are the strongest signals (R² > 6%). USDJPY's strong β does not survive into a strong Sharpe because of fat-tail drawdowns.
+- **Signal IC and strategy Sharpe correlate but not 1:1** — execution path, drawdown sensitivity, and pair liquidity also matter.
+
+Script: [`../notebooks/regression_all_pairs.py`](../notebooks/regression_all_pairs.py)
+
+---
+
 ## Strategy #1 — Δ(EU 2Y − US 2Y) → next-day EURUSD
 
 **Signal.** `pos[t+1] = sign(d_diff[t])` where `d_diff[t] = (EU_2Y − US_2Y)[t] − (EU_2Y − US_2Y)[t−1]`. Long EURUSD when the rate differential moved in EU's favour today, short when it moved against. Held 1 trading day.
