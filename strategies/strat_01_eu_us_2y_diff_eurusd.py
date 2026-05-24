@@ -93,7 +93,7 @@ def fetch_eurusd() -> pd.Series:
 
 
 # ── Strategy logic ───────────────────────────────────────────────────────────
-def run() -> dict:
+def run(csv_out: Path | None = None) -> dict:
     print(f"\nStrategy #1 — Δ(EU 2Y − US 2Y) → next-day EURUSD")
     print(f"  Period   : {START} → {END}")
     print(f"  Cost     : {ROUND_TRIP_PIPS} pips round-trip ({COST_PER_UNIT_PIPS} pips/unit traded)\n")
@@ -202,6 +202,30 @@ def run() -> dict:
     out = REPORTS / "strategy_01_eu_us_2y_diff_eurusd.png"
     plt.savefig(out, dpi=150, bbox_inches="tight")
     print(f"\nPlot saved: {out.relative_to(REPO)}")
+
+    # Optional CSV time-series export — full track record, daily
+    if csv_out is not None:
+        cum_gross_full = (1 + gross_ret.fillna(0)).cumprod()
+        cum_net_full = (1 + (gross_ret - cost_in_returns).fillna(0)).cumprod()
+
+        csv_df = pd.DataFrame({
+            "eu_2y_pct": eu,
+            "us_2y_pct": us,
+            "rate_diff_pp": rate_diff,
+            "d_diff_pp": d_diff,
+            "eurusd_close": px,
+            "eurusd_return": spot_ret,
+            "position": position,
+            "gross_return": gross_ret,
+            "cost": cost_in_returns,
+            "net_return": gross_ret - cost_in_returns,
+            "cum_gross": cum_gross_full,
+            "cum_net": cum_net_full,
+        })
+        csv_df.index.name = "date"
+        csv_out.parent.mkdir(parents=True, exist_ok=True)
+        csv_df.to_csv(csv_out, float_format="%.6f")
+        print(f"CSV saved : {csv_out.relative_to(REPO)}  ({len(csv_df):,} rows × {csv_df.shape[1]} cols)")
 
     return dict(net=s_net, gross=s_gross, benchmark=s_bench,
                 n_trades=n_trades, cost_drag=cost_drag_pct)

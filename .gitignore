@@ -15,6 +15,6 @@ data/cache/
 *.h5
 
 # Public artefacts that DO get committed
-!live/track_record/track-record.csv
+!live/track_record/*.csv
 .ipynb_checkpoints/
 

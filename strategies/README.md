@@ -62,6 +62,22 @@ Script: [`../notebooks/regression_all_pairs.py`](../notebooks/regression_all_pai
 
 ---
 
+## Daily track-record CSVs
+
+For the three cleanest strategies (#1, #2, #6) the full daily time series is committed to [`../live/track_record/`](../live/track_record/) as auditable CSVs. Anyone can re-derive Sharpe / drawdown / hit-rate / equity curve from the raw numbers.
+
+| Strategy | CSV | Rows | Cols |
+|---|---|---|---|
+| #1 EURUSD | [`strategy_01_eurusd_track_record.csv`](../live/track_record/strategy_01_eurusd_track_record.csv) | 3,912 | 12 |
+| #2 GBPUSD | [`strategy_02_gbpusd_track_record.csv`](../live/track_record/strategy_02_gbpusd_track_record.csv) | 3,911 | 12 |
+| #6 USDCAD | [`strategy_06_usdcad_track_record.csv`](../live/track_record/strategy_06_usdcad_track_record.csv) | 3,911 | 12 |
+
+**Columns**: `date, base_2y_pct, quote_2y_pct, rate_diff_pp, d_diff_pp, <pair>_close, <pair>_return, position, gross_return, cost, net_return, cum_gross, cum_net`.
+
+To regenerate: `python strategies/_export_csvs.py` (requires `FRED_API_KEY` env var for Strategy #1).
+
+---
+
 ## Strategy #1 — Δ(EU 2Y − US 2Y) → next-day EURUSD
 
 **Signal.** `pos[t+1] = sign(d_diff[t])` where `d_diff[t] = (EU_2Y − US_2Y)[t] − (EU_2Y − US_2Y)[t−1]`. Long EURUSD when the rate differential moved in EU's favour today, short when it moved against. Held 1 trading day.

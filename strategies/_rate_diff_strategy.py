@@ -74,6 +74,7 @@ def run_rate_diff_strategy(
     start: str = "2010-01-04",
     end: str = "2024-12-31",
     cost_round_trip_pips: float = DEFAULT_COST_PIPS_ROUND_TRIP,
+    csv_out: Path | None = None,
 ) -> dict:
     """
     Run a rate-differential strategy on `pair`.
@@ -205,6 +206,32 @@ def run_rate_diff_strategy(
     plt.savefig(out, dpi=150, bbox_inches="tight")
     plt.close(fig)
     print(f"\nPlot saved: {out.relative_to(REPO)}")
+
+    # Optional CSV time-series export — full track record, daily
+    if csv_out is not None:
+        # Use the un-dropped versions but keep alignment on idx; drop pre-first_valid rows
+        cum_gross_full = (1 + gross_ret.reindex(idx).fillna(0)).cumprod()
+        cum_net_full = (1 + (gross_ret.reindex(idx) - cost_in_returns.reindex(idx)).fillna(0)).cumprod()
+
+        csv_df = pd.DataFrame({
+            f"{base_ccy.lower()}_2y_pct": base_2y,
+            f"{quote_ccy.lower()}_2y_pct": quote_2y,
+            "rate_diff_pp": rate_diff,
+            "d_diff_pp": d_diff,
+            f"{pair.lower()}_close": px,
+            f"{pair.lower()}_return": spot_ret,
+            "position": position,
+            "gross_return": gross_ret.reindex(idx),
+            "cost": cost_in_returns,
+            "net_return": (gross_ret.reindex(idx) - cost_in_returns.reindex(idx)),
+            "cum_gross": cum_gross_full,
+            "cum_net": cum_net_full,
+        })
+        csv_df = csv_df.loc[csv_df.index >= first_valid].copy()
+        csv_df.index.name = "date"
+        csv_out.parent.mkdir(parents=True, exist_ok=True)
+        csv_df.to_csv(csv_out, float_format="%.6f")
+        print(f"CSV saved : {csv_out.relative_to(REPO)}  ({len(csv_df):,} rows × {csv_df.shape[1]} cols)")
 
     return dict(net=s_net, gross=s_gross, benchmark=s_bench,
                 n_trades=n_trades, cost_drag=cost_drag,
