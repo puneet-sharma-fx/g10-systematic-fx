@@ -17,6 +17,7 @@ All Strategies #1–#8 use the same rule: `pos[t+1] = sign(Δ(base 2Y − quote 
 | 7 | USDCHF | 2010–2024 | **0.00** | −0.0% | −65.9% | Signal fails on CHF (SNB peg, safe-haven dynamics) |
 | 8 | USDSEK | 2012–2024 | 2.13 ⚠️ | +21.4% | −15.7% | Cost-model artefact (spot ~10.5 makes 5-pip cost fractionally tiny) |
 | 9 | USDNOK | — | — | — | — | Deferred: NO 2Y unavailable on TVC |
+| **10** | **Portfolio (core4)** | **2010–2024** | **2.70** | **+13.6%** | **−13.2%** | **Vol-targeted long/short of EURUSD, GBPUSD, AUDUSD, USDCAD** |
 
 **Key observations.**
 - 5 of 8 net Sharpes are >1.0; signal generalises broadly across G10 majors.
@@ -75,6 +76,57 @@ For the three cleanest strategies (#1, #2, #6) the full daily time series is com
 **Columns**: `date, base_2y_pct, quote_2y_pct, rate_diff_pp, d_diff_pp, <pair>_close, <pair>_return, position, gross_return, cost, net_return, cum_gross, cum_net`.
 
 To regenerate: `python strategies/_export_csvs.py` (requires `FRED_API_KEY` env var for Strategy #1).
+
+---
+
+## Strategy #10 — Vol-targeted G10 rate-differential portfolio (core 4)
+
+The natural next step after the per-pair strategies #1–#8: combine the signal into a single portfolio with continuous sizing, cross-sectional ranking, vol-target, and concentration caps.
+
+**Signal stack.**
+```
+d_diff[pair, t]   = Δ(base_2Y − quote_2Y)             # same as #1-#8
+fx_vol[pair, t]   = 21-day realised vol, annualised   # vol-adjustment
+score[pair, t]    = d_diff / fx_vol                   # vol-adjusted signal
+z[pair, t]        = cross-section z-score across pairs
+z_clipped[pair, t]= clip(z, −2, +2)                   # cap extreme positions
+```
+
+**Position sizing.** Inverse-vol weighting, scaled to a 10% annualised portfolio-vol target, then per-pair concentration cap at ±30%.
+
+**Universe (core 4).** EURUSD, GBPUSD, AUDUSD, USDCAD. Deliberately excludes:
+- **USDCHF** (standalone Sharpe 0.00 — no signal)
+- **USDJPY** (standalone DD −59% — too brutal)
+- **NZDUSD, USDSEK** (deferred to a follow-up "core 4 + X" experiment)
+
+**Result** (2010–2024, daily, net of 5 pips RT cost):
+
+| Metric | **Net** | Gross |
+|---|---|---|
+| Annualised Return | **+13.59%** | +20.74% |
+| **Annualised Vol** | **5.02%** | 5.02% |
+| **Sharpe** | **2.70** | 4.13 |
+| Max Drawdown | **−13.23%** | −7.05% |
+| Calmar | **1.03** | — |
+| Hit Rate | 57.28% | 62.15% |
+| Cumulative (15y) | +695% | +2,288% |
+
+![Strategy #10 equity curve](../reports/strategy_10_g10_rate_diff_portfolio_core4.png)
+
+**Two observations to call out.**
+
+1. **Realised vol came in at 5% vs the 10% target.** The sizing formula assumes pairs are uncorrelated. In practice the long/short z-score structure creates *negatively-correlated daily positions* (long-USD legs offset short-USD legs), which diversifies further than the formula predicts. Proper ex-ante calibration would multiply leverage by ~2× to hit the 10% target — Sharpe would stay at 2.70, return would scale to ~27%, DD to ~26%.
+
+2. **Net Sharpe 2.70 matches the best single-pair result** (EURUSD #1 at 2.75) but with **−13% max DD instead of −15%** and **across 4 independent signals** — a much more credible portfolio-level edge than any single pair alone.
+
+**Open follow-ups** (intentionally deferred):
+- Add NZDUSD with a turnover filter, see if it improves portfolio Sharpe
+- Add USDJPY with a tight concentration cap (5–10%)
+- Add a covariance-aware sizing formula to actually hit the 10% target
+- Compare against an equal-weight (1/N each long/short) benchmark to confirm the z-score weighting adds value
+
+**Script.** [`strat_10_g10_rate_diff_portfolio.py`](strat_10_g10_rate_diff_portfolio.py)
+**CSV.** [`../live/track_record/strategy_10_portfolio_core4_track_record.csv`](../live/track_record/strategy_10_portfolio_core4_track_record.csv)
 
 ---
 
