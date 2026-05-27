@@ -18,6 +18,7 @@ All Strategies #1–#8 use the same rule: `pos[t+1] = sign(Δ(base 2Y − quote 
 | 8 | USDSEK | 2012–2024 | 2.13 ⚠️ | +21.4% | −15.7% | Cost-model artefact (spot ~10.5 makes 5-pip cost fractionally tiny) |
 | 9 | USDNOK | — | — | — | — | Deferred: NO 2Y unavailable on TVC |
 | **10** | **Portfolio (core4)** | **2010–2024** | **2.70** | **+13.6%** | **−13.2%** | **Vol-targeted long/short of EURUSD, GBPUSD, AUDUSD, USDCAD** |
+| 11 ❌ | Cross-sectional momentum portfolio | 2010–2024 | **−0.34** | −2.3% | −39.4% | Tested and rejected — see [`rejected/`](rejected/) |
 
 **Key observations.**
 - 5 of 8 net Sharpes are >1.0; signal generalises broadly across G10 majors.

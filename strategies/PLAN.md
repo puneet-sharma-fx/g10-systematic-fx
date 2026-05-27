@@ -37,6 +37,7 @@ Apply the same structure as Strategy #1 to the 8 remaining G10 pairs. For each p
 | 8 | USDSEK | Δ(US 2Y − SE 2Y) | ✅ Sharpe 2.13 net (⚠️ 5-pip cost optimistic at SEK spot ~10.5) |
 | 9 | USDNOK | Δ(US 2Y − NO 2Y) | ⚠️ Deferred — NO 2Y unavailable on TradingView (only NO10Y available). To revisit with Norges Bank API or accept tenor mismatch. |
 | **10** | **Portfolio** | Vol-targeted G10 rate-diff portfolio (EUR, GBP, AUD, CAD) | ✅ Sharpe 2.70 net (−13% DD, Calmar 1.03) |
+| 11 ❌ | Momentum portfolio | Cross-sectional 21-day momentum, weekly, top-2/bottom-2 | Rejected — Sharpe −0.34. FX momentum decay post-GFC; documented in [`strategies/rejected/`](rejected/) |
 
 ---
 
