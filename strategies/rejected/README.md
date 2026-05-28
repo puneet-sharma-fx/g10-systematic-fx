@@ -39,10 +39,26 @@ The canonical Asness-Moskowitz-Pedersen "Value and Momentum Everywhere" (2013) u
 
 **What this validates.** That **rate-differential change is a genuinely different signal than price momentum** — they look superficially similar (both react to recent price/rate moves) but rate-diff predicts next-day FX positively (Strategies #1–#8, #10) while price momentum predicts it neutrally-to-negatively. This is consistent with the under-reaction-to-fundamentals story: rate moves reflect fresh policy information that hasn't fully diffused into FX yet, whereas price moves are already-reflected information.
 
-**What might rescue it (untested as of this commit).**
-- **Longer lookback** (63d or 252d): the literature's standard momentum windows are 3-12 months. 21 days is short. Worth one targeted test.
-- **Time-series version**: each pair on its own merits (long if positive, short if negative) instead of cross-sectional ranking. Sometimes TS survives when XS fails.
-- **Vol-managed momentum** (Barroso-Santa-Clara 2015): scale signal by recent realised vol. Generally improves momentum strategies after costs.
+**Lookback sweep — does a longer window rescue it? (No.)**
+
+We re-ran the identical portfolio across the full lookback spectrum, 21d (≈1m) to 252d (≈12m):
+
+| Lookback | Net Sharpe | Ann Return | Max DD | Hit Rate |
+|---|---|---|---|---|
+| 21d (≈1m) | −0.34 | −2.3% | −39.4% | 50.9% |
+| 63d (≈3m) | −0.23 | −1.6% | −31.8% | 50.6% |
+| 126d (≈6m) | −0.19 | −1.3% | −26.4% | 49.7% |
+| 252d (≈12m) | −0.08 | −0.6% | −24.4% | 49.3% |
+
+![Momentum lookback sweep](../../reports/rejected/momentum_lookback_sweep.png)
+
+There is a clean **monotonic improvement toward zero** as the window lengthens — consistent with the literature finding that longer-horizon momentum is more robust — but **no window crosses into positive territory**. Even the academic-standard 12-month lookback prints −0.08 (essentially flat, marginally negative). Cross-sectional momentum is simply not a profitable factor in 2010–2024 G10 FX at any standard horizon.
+
+Sweep script: [`../../notebooks/explore_momentum_lookbacks.py`](../../notebooks/explore_momentum_lookbacks.py)
+
+**Still untested (lower priority given the sweep result).**
+- **Time-series version**: each pair on its own merits (long if positive, short if negative) instead of cross-sectional ranking. Sometimes TS survives when XS fails — but given XS is negative at all horizons, expectations are low.
+- **Vol-managed momentum** (Barroso-Santa-Clara 2015): scale signal by recent realised vol. Generally improves momentum strategies after costs, but unlikely to flip a negative-Sharpe factor positive.
 
 **Sources.** FX prices: yfinance `EURUSD=X` etc. No external rate data needed.
 
