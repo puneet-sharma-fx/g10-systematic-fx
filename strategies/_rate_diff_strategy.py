@@ -235,4 +235,5 @@ def run_rate_diff_strategy(
 
     return dict(net=s_net, gross=s_gross, benchmark=s_bench,
                 n_trades=n_trades, cost_drag=cost_drag,
-                pair=pair, base=base_ccy, quote=quote_ccy)
+                pair=pair, base=base_ccy, quote=quote_ccy,
+                net_ret_series=net_ret)

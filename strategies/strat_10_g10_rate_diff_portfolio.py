@@ -266,6 +266,7 @@ def run(universe_name: str = "core4", csv_out: Path | None = None) -> dict:
         cost_drag=cum_cost_drag,
         n_obs=len(net_port),
         universe=universe_name,
+        net_ret_series=net_port,
     )
 
 

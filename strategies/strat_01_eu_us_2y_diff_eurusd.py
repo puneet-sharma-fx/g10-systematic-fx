@@ -228,7 +228,8 @@ def run(csv_out: Path | None = None) -> dict:
         print(f"CSV saved : {csv_out.relative_to(REPO)}  ({len(csv_df):,} rows × {csv_df.shape[1]} cols)")
 
     return dict(net=s_net, gross=s_gross, benchmark=s_bench,
-                n_trades=n_trades, cost_drag=cost_drag_pct)
+                n_trades=n_trades, cost_drag=cost_drag_pct,
+                net_ret_series=net_ret)
 
 
 if __name__ == "__main__":
