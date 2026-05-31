@@ -67,6 +67,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | 9 | Δ(US 2Y − NO 2Y) → next-day USDNOK | deferred — NO 2Y data unavailable |
 | **10** | **Vol-targeted portfolio (EUR, GBP, AUD, CAD)** | **2.70** |
 | 11 | Cross-sectional momentum portfolio (rejected — see [`strategies/rejected/`](strategies/rejected/)) | −0.34 |
+| **12** | **Calibrated vol-targeted portfolio (EUR, GBP, AUD, CAD)** | **2.73** |
 
 ---
 

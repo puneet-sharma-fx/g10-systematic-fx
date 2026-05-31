@@ -19,6 +19,7 @@ All Strategies #1–#8 use the same rule: `pos[t+1] = sign(Δ(base 2Y − quote 
 | 9 | USDNOK | — | — | — | — | Deferred: NO 2Y unavailable on TVC |
 | **10** | **Portfolio (core4)** | **2010–2024** | **2.70** | **+13.6%** | **−13.2%** | **Vol-targeted long/short of EURUSD, GBPUSD, AUDUSD, USDCAD** |
 | 11 ❌ | Cross-sectional momentum portfolio | 2010–2024 | **−0.34** | −2.3% | −39.4% | Tested and rejected — see [`rejected/`](rejected/) |
+| **12** | **Calibrated portfolio (core4)** | **2010–2024** | **2.73** | **+25.5%** | **−22.0%** | **Strategy #10 with ex-ante leverage scalar — hits 10% vol target, Calmar 1.16** |
 
 **Key observations.**
 - 5 of 8 net Sharpes are >1.0; signal generalises broadly across G10 majors.
@@ -160,6 +161,44 @@ z_clipped[pair, t]= clip(z, −2, +2)                   # cap extreme positions
 
 **Script.** [`strat_10_g10_rate_diff_portfolio.py`](strat_10_g10_rate_diff_portfolio.py)
 **CSV.** [`../live/track_record/strategy_10_portfolio_core4_track_record.csv`](../live/track_record/strategy_10_portfolio_core4_track_record.csv)
+
+**Calibrated version.** Strategy #12 below applies the ex-ante leverage scalar that actually hits the 10% vol target.
+
+---
+
+## Strategy #12 — Leverage-calibrated portfolio (core 4)
+
+Strategy #10 with one fix: an ex-ante rolling-vol leverage scalar that calibrates against the unlevered series' realised volatility so the portfolio actually hits its 10% target. Identical signal, identical universe, identical concentration logic — only the position scaling differs.
+
+**Calibration mechanic.** At each day *t*:
+```
+rolling_vol[t]      = 63-day annualised vol of Strategy #10's unlevered net return
+leverage_scalar[t]  = clip(10% / rolling_vol[t−1], 0, 3.0)        # lagged 1 day, no look-ahead
+weights_levered[t]  = clip(weights_unlevered[t] × leverage_scalar[t], ±60%)
+```
+
+Average leverage scalar applied across the backtest: **2.19×** (consistent with the 5%→10% vol gap diagnosed in Strategy #10).
+
+**Result** (2010–2024, daily, net of 5 pips RT cost):
+
+| Metric | **Net (calibrated)** | Strategy #10 (uncalibrated, for reference) |
+|---|---|---|
+| Annualised Return | **+25.49%** | +13.59% |
+| **Annualised Vol** | **9.32%** ✓ (target hit) | 5.02% |
+| **Sharpe** | **2.73** | 2.70 |
+| Max Drawdown | −22.01% | −13.23% |
+| **Calmar** | **1.16** | 1.03 |
+| Hit Rate | 57.18% | 57.28% |
+| Cumulative (15y) | +4,631% | +695% |
+
+![Strategy #12 equity curve](../reports/strategy_12_g10_rate_diff_portfolio_core4.png)
+
+**Read.** Sharpe is essentially unchanged at 2.73 (scale-invariant — confirming the original signal was correct, just under-levered). Return and drawdown both scale by ~2× as expected. Cost drag also ~2× (turnover scales with leverage). Calmar improves to 1.16 (from 1.03) — a small but real benefit of running closer to the vol target.
+
+**What the calibration adds for credibility.** The original Strategy #10 honestly flagged "realised vol came in at 5% vs the 10% target — needs ex-ante calibration." Strategy #12 ships the actual fix. The research trail now shows: built portfolio → diagnosed the under-leverage → fixed it with a no-look-ahead rolling calibration. That sequence is the credible version of "vol-targeted systematic strategy."
+
+**Script.** [`strat_12_g10_rate_diff_portfolio_calibrated.py`](strat_12_g10_rate_diff_portfolio_calibrated.py) (thin wrapper calling `strat_10.run(calibrate_leverage=True)`)
+**CSV.** [`../live/track_record/strategy_12_portfolio_calibrated_track_record.csv`](../live/track_record/strategy_12_portfolio_calibrated_track_record.csv)
 
 ---
 

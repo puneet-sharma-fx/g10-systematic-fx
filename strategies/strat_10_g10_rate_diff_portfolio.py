@@ -85,12 +85,26 @@ def _fetch_fx(pair: str) -> pd.Series:
     return s.dropna()
 
 
-def run(universe_name: str = "core4", csv_out: Path | None = None) -> dict:
-    print(f"\nStrategy #10 — vol-targeted G10 rate-differential portfolio")
+def run(
+    universe_name: str = "core4",
+    csv_out: Path | None = None,
+    *,
+    calibrate_leverage: bool = False,
+    calibration_window: int = 63,
+    max_leverage_scalar: float = 3.0,
+    max_per_pair_levered: float = 0.60,
+    strategy_number: int = 10,
+) -> dict:
+    label_max_per_pair = max_per_pair_levered if calibrate_leverage else MAX_PER_PAIR
+    print(f"\nStrategy #{strategy_number} — vol-targeted G10 rate-differential portfolio"
+          f"{' (leverage-calibrated)' if calibrate_leverage else ''}")
     print(f"  Universe   : {universe_name}")
     print(f"  Target vol : {TARGET_VOL:.0%} annualised")
-    print(f"  Max per pair: ±{MAX_PER_PAIR:.0%}")
-    print(f"  Cost       : {COST_ROUND_TRIP_PIPS} pips round-trip\n")
+    print(f"  Max per pair: ±{label_max_per_pair:.0%}")
+    print(f"  Cost       : {COST_ROUND_TRIP_PIPS} pips round-trip")
+    if calibrate_leverage:
+        print(f"  Calibration: rolling {calibration_window}d realised-vol, max leverage {max_leverage_scalar:.1f}x")
+    print()
 
     pairs = UNIVERSES[universe_name]
     if pairs is None:
@@ -170,6 +184,33 @@ def run(universe_name: str = "core4", csv_out: Path | None = None) -> dict:
     gross_port = gross_pair_ret.sum(axis=1)
     net_port = (gross_port - cost_total).dropna()
 
+    # ── Optional ex-ante leverage calibration ──────────────────────────────
+    # The uncorrelated-pairs sizing under-shoots realised vol because the
+    # long/short z-score structure diversifies further than the formula
+    # predicts. Calibrate via rolling realised vol of the unlevered series,
+    # lagged 1 day to avoid look-ahead.
+    if calibrate_leverage:
+        rolling_vol = (net_port.rolling(calibration_window, min_periods=21)
+                       .std() * np.sqrt(TRADING_DAYS))
+        leverage_scalar = (TARGET_VOL / rolling_vol).clip(upper=max_leverage_scalar)
+        # Use yesterday's vol estimate to size today's positions
+        leverage_scalar = leverage_scalar.shift(1).reindex(weights.index).fillna(1.0)
+
+        weights = weights.mul(leverage_scalar, axis=0)
+        weights = weights.clip(lower=-max_per_pair_levered, upper=max_per_pair_levered)
+
+        # Recompute P&L with the levered weights
+        gross_pair_ret = weights * fx_ret
+        turnover = weights.diff().abs().fillna(0)
+        cost_per_pair = pd.DataFrame(index=weights.index, columns=pair_names, dtype=float)
+        for name in pair_names:
+            cost_per_pair[name] = turnover[name] * (cost_per_unit_pips * pip_by_pair[name]) / fx_close[name]
+        cost_total = cost_per_pair.sum(axis=1)
+        gross_port = gross_pair_ret.sum(axis=1)
+        net_port = (gross_port - cost_total).dropna()
+        avg_lev_scalar = float(leverage_scalar.mean())
+        print(f"  Avg leverage scalar applied : {avg_lev_scalar:.2f}x")
+
     # ── Metrics ────────────────────────────────────────────────────────────
     def stats(returns: pd.Series) -> dict:
         ann_ret = returns.mean() * TRADING_DAYS
@@ -193,7 +234,8 @@ def run(universe_name: str = "core4", csv_out: Path | None = None) -> dict:
 
     # ── Print summary ──────────────────────────────────────────────────────
     print("=" * 65)
-    print(f"  Strategy #10 — portfolio ({universe_name})")
+    print(f"  Strategy #{strategy_number} — portfolio ({universe_name})"
+          f"{' [leverage-calibrated]' if calibrate_leverage else ''}")
     print("=" * 65)
     print(f"  Pairs traded         : {', '.join(pair_names)}")
     print(f"  Observations         : {len(net_port):,}")
@@ -222,11 +264,12 @@ def run(universe_name: str = "core4", csv_out: Path | None = None) -> dict:
             label=f"Net of {COST_ROUND_TRIP_PIPS:.0f} pips RT (Sharpe {s_net['sharpe']:.2f}, vol {s_net['ann_vol']*100:.1f}%)")
     ax.axhline(1.0, color="k", lw=0.5)
     ax.set_ylabel("Cumulative return (×)")
+    cal_suffix = " — leverage-calibrated" if calibrate_leverage else ""
     ax.set_title(
-        f"Strategy #10 — vol-targeted G10 rate-diff portfolio ({universe_name})\n"
+        f"Strategy #{strategy_number} — vol-targeted G10 rate-diff portfolio ({universe_name}){cal_suffix}\n"
         f"{net_port.index[0].strftime('%Y-%m-%d')} to {END}  ·  "
-        f"{len(net_port):,} daily obs  ·  target vol {TARGET_VOL:.0%}, max/pair ±{MAX_PER_PAIR:.0%}, "
-        f"net of {COST_ROUND_TRIP_PIPS:.0f} pips RT"
+        f"{len(net_port):,} daily obs  ·  target vol {TARGET_VOL:.0%}, "
+        f"max/pair ±{label_max_per_pair:.0%}, net of {COST_ROUND_TRIP_PIPS:.0f} pips RT"
     )
     ax.legend(loc="upper left")
     ax.grid(True, alpha=0.3)
@@ -239,7 +282,7 @@ def run(universe_name: str = "core4", csv_out: Path | None = None) -> dict:
     ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plot_out = REPORTS / f"strategy_10_g10_rate_diff_portfolio_{universe_name}.png"
+    plot_out = REPORTS / f"strategy_{strategy_number:02d}_g10_rate_diff_portfolio_{universe_name}.png"
     plt.savefig(plot_out, dpi=150, bbox_inches="tight")
     plt.close(fig)
     print(f"\nPlot saved: {plot_out.relative_to(REPO)}")
