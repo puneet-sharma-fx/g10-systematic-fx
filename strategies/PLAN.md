@@ -39,6 +39,7 @@ Apply the same structure as Strategy #1 to the 8 remaining G10 pairs. For each p
 | **10** | **Portfolio** | Vol-targeted G10 rate-diff portfolio (EUR, GBP, AUD, CAD) | ✅ Sharpe 2.70 net (−13% DD, Calmar 1.03) |
 | 11 ❌ | Momentum portfolio | Cross-sectional 21-day momentum, weekly, top-2/bottom-2 | Rejected — Sharpe −0.34. FX momentum decay post-GFC; documented in [`strategies/rejected/`](rejected/) |
 | **12** | **Calibrated portfolio** | Strategy #10 with ex-ante rolling-vol leverage scalar (avg 2.19×) | ✅ Sharpe 2.73 net, hits 10% vol target, Calmar 1.16 |
+| 13 ⚠️ | CFTC positioning extreme (short) | +2σ positioning + 21-DMA breakdown trigger | ⚠️ Sharpe +0.28, 10 trades over 12y — positive expectancy but tiny sample. Original +3σ never fires. |
 
 ---
 
