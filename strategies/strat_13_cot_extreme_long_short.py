@@ -1,43 +1,32 @@
 """
-Strategy #13 — CFTC positioning extreme + 21-DMA breakdown (short-only)
+Strategy #13 — CFTC positioning extreme + 21-DMA reversal (long AND short)
 
-Hypothesis:
-    When speculative positioning in a pair becomes extremely crowded long
-    (+3σ over 5-year rolling window), the pair is set up for an unwind.
-    Wait for technical confirmation — price closes below 21-DMA for 2
-    consecutive days — then go short. Exit when price closes back above
-    21-DMA for 2 days, or hard time-stop at 30 trading days.
+Two-sided mean-reversion strategy: catch positioning unwinds in both directions.
+Earlier short-only version superseded by this two-sided one.
 
-Setup:
-    pair_positioning_z[t]  >  +2.0
-    where pair_positioning = sign-adjusted Leveraged Money net / OI ratio
-    z-score computed over a trailing 260-week (~5-year) window.
-    (Note: +3σ was the original spec but empirically never fires —
-    CFTC positioning is bounded and max observed z across G10 is ~+2.7.
-    +2.0σ is the standard practitioner threshold for "crowded long".)
+LONG SIDE
+    Setup:    pair positioning z[t] < −2.0   (crowded SHORT → due for short squeeze)
+    Trigger:  close[t]   > SMA21[t]
+              close[t-1] > SMA21[t-1]
+    Entry:    long the pair (+1 notional)
+    Exit:     close[t] < SMA21[t] AND close[t-1] < SMA21[t-1],  OR  30-day time stop
 
-Trigger (after setup is true):
-    close[t]   < SMA21[t]
-    close[t-1] < SMA21[t-1]
+SHORT SIDE  (identical to Strategy #13)
+    Setup:    pair positioning z[t] > +2.0   (crowded LONG → due for unwind)
+    Trigger:  close[t]   < SMA21[t]
+              close[t-1] < SMA21[t-1]
+    Entry:    short the pair (−1 notional)
+    Exit:     close[t] > SMA21[t] AND close[t-1] > SMA21[t-1],  OR  30-day time stop
 
-Action: enter SHORT at close of day t, full notional (-1 per active pair).
+A pair can hold either a long or a short, never both simultaneously. After exit,
+the strategy is flat in that pair until a new setup+trigger fires.
 
-Exit (whichever fires first):
-    close[t]   > SMA21[t]  AND  close[t-1] > SMA21[t-1]   (2-day re-cross above MA)
-    OR
-    30 trading days have elapsed since entry (time stop)
+Realism (inherited from #13):
+    CFTC TFF shifted +3 business days for publication lag → no look-ahead.
+    Z-score computed over 260-week (5y) rolling window, sign-adjusted to pair direction.
 
-Universe: 7 G10 pairs with CFTC TFF data
-    EURUSD, GBPUSD, AUDUSD, NZDUSD, USDJPY, USDCAD, USDCHF
-    (SEK, NOK not available on CFTC TFF; CHF kept — strategy is event-driven
-    so its single-pair sensitivity to peg events matters less than for #7.)
-
-Realism:
-    CFTC reports are as-of Tuesday but published Friday afternoon. We shift
-    the COT index forward by 3 business days so the strategy only uses
-    positioning data after its actual publication time.
-
-Cost: 5 pips round-trip per trade (entry + exit).
+Universe: 7 G10 pairs with CFTC TFF data.
+Cost: 5 pips round-trip per trade.
 """
 from __future__ import annotations
 
@@ -62,21 +51,19 @@ COT_CACHE = REPO / "data" / "raw" / "cftc_tff_cache.csv"
 sys.path.insert(0, str(REPO))
 from data.cftc import fetch_cot
 
-# ── Parameters ───────────────────────────────────────────────────────────────
-START                = "2010-01-04"
-END                  = "2024-12-31"
-COST_ROUND_TRIP_PIPS = 5.0
-TRADING_DAYS         = 252
+# ── Parameters (mirror of #13) ───────────────────────────────────────────────
+START                  = "2010-01-04"
+END                    = "2024-12-31"
+COST_ROUND_TRIP_PIPS   = 5.0
+TRADING_DAYS           = 252
 
-ZSCORE_WINDOW_WEEKS  = 260   # ≈ 5 years
-ZSCORE_THRESHOLD     = 2.0   # +2 SD (top ~2.5% of positioning; +3 never triggers in this dataset)
-SMA_DAYS             = 21
-CONSECUTIVE_DAYS     = 2
-TIME_STOP_DAYS       = 30
-COT_PUBLISH_LAG_BDAYS = 3    # Tue as-of → Fri publish
+ZSCORE_WINDOW_WEEKS    = 260
+ZSCORE_THRESHOLD       = 2.0
+SMA_DAYS               = 21
+CONSECUTIVE_DAYS       = 2
+TIME_STOP_DAYS         = 30
+COT_PUBLISH_LAG_BDAYS  = 3
 
-# Universe: (pair, COT currency code, pair-direction sign, pip size)
-# sign aligns CFTC "long currency X" with "long the pair" direction
 PAIRS = [
     ("EURUSD", "EUR", +1, 0.0001),
     ("GBPUSD", "GBP", +1, 0.0001),
@@ -91,9 +78,8 @@ PAIRS = [
 def load_cot() -> pd.DataFrame:
     if COT_CACHE.exists():
         print(f"  Loading cached COT: {COT_CACHE.relative_to(REPO)}")
-        df = pd.read_csv(COT_CACHE, index_col=0, parse_dates=True)
-        return df
-    print("  No cache — fetching CFTC TFF zips (this takes ~30s)...")
+        return pd.read_csv(COT_CACHE, index_col=0, parse_dates=True)
+    print("  No cache — fetching CFTC TFF zips...")
     df = fetch_cot(START, END)
     COT_CACHE.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(COT_CACHE)
@@ -107,18 +93,15 @@ def _fetch_fx(pair: str) -> pd.Series:
 
 
 def run(csv_out: Path | None = None) -> dict:
-    print(f"\nStrategy #13 — CFTC positioning extreme + 21-DMA breakdown (short-only)")
-    print(f"  Setup     : positioning z > +{ZSCORE_THRESHOLD} (over {ZSCORE_WINDOW_WEEKS} weeks)")
-    print(f"  Trigger   : close below {SMA_DAYS}-DMA for {CONSECUTIVE_DAYS} consecutive days")
-    print(f"  Exit      : close above {SMA_DAYS}-DMA for {CONSECUTIVE_DAYS} days, or {TIME_STOP_DAYS}d time stop")
-    print(f"  Cost      : {COST_ROUND_TRIP_PIPS} pips RT")
-    print(f"  Lag       : COT shifted +{COT_PUBLISH_LAG_BDAYS} bdays (publish realism)")
+    print(f"\nStrategy #13 — CFTC positioning extreme + 21-DMA reversal (long + short)")
+    print(f"  Setup     : |positioning z| > {ZSCORE_THRESHOLD}σ (over {ZSCORE_WINDOW_WEEKS}w)")
+    print(f"  LONG trig : close > {SMA_DAYS}-DMA for {CONSECUTIVE_DAYS} consec days  (when z < −{ZSCORE_THRESHOLD})")
+    print(f"  SHORT trig: close < {SMA_DAYS}-DMA for {CONSECUTIVE_DAYS} consec days  (when z > +{ZSCORE_THRESHOLD})")
+    print(f"  Exit      : mirror cross of 21-DMA, or {TIME_STOP_DAYS}d time stop")
+    print(f"  Cost      : {COST_ROUND_TRIP_PIPS} pips RT, COT lagged +{COT_PUBLISH_LAG_BDAYS} bdays")
     print()
 
     cot = load_cot()
-    print(f"  COT: {cot.shape[0]} weeks × {cot.shape[1]} currencies, "
-          f"{cot.index[0].date()} → {cot.index[-1].date()}")
-    # Shift forward by 3 business days to reflect publication lag
     cot.index = cot.index + pd.offsets.BDay(COT_PUBLISH_LAG_BDAYS)
 
     print("  Fetching FX prices...")
@@ -142,18 +125,17 @@ def run(csv_out: Path | None = None) -> dict:
         pair_pos = sign * cot[ccy]
         rmean = pair_pos.rolling(ZSCORE_WINDOW_WEEKS, min_periods=52).mean()
         rstd  = pair_pos.rolling(ZSCORE_WINDOW_WEEKS, min_periods=52).std()
-        z_weekly = (pair_pos - rmean) / rstd
-        z = z_weekly.reindex(idx, method="ffill")
+        z = ((pair_pos - rmean) / rstd).reindex(idx, method="ffill")
 
         px = fx_close[pair]
         ma = sma[pair]
 
         below = (px < ma)
         above = (px > ma)
-        below_2d = below & below.shift(1).fillna(False)
-        above_2d = above & above.shift(1).fillna(False)
+        below_2d = (below & below.shift(1).fillna(False)).infer_objects(copy=False)
+        above_2d = (above & above.shift(1).fillna(False)).infer_objects(copy=False)
 
-        in_trade = False
+        in_trade = 0      # 0 = flat, +1 = long, -1 = short
         entry_dt = None
         days_held = 0
         for t in idx:
@@ -161,26 +143,38 @@ def run(csv_out: Path | None = None) -> dict:
             if pd.isna(px.loc[t]) or pd.isna(ma.loc[t]) or pd.isna(zt):
                 positions.loc[t, pair] = 0.0
                 continue
-            if in_trade:
-                days_held += 1
-                if (above_2d.loc[t]) or (days_held >= TIME_STOP_DAYS):
-                    # exit at this close
-                    positions.loc[t, pair] = 0.0
-                    trades.append({"pair": pair, "entry": entry_dt, "exit": t,
-                                   "bars_held": days_held})
-                    in_trade = False
-                    entry_dt = None
+
+            if in_trade == 0:
+                # Look for new entry
+                if (zt > ZSCORE_THRESHOLD) and bool(below_2d.loc[t]):
+                    positions.loc[t, pair] = -1.0
+                    in_trade = -1
+                    entry_dt = t
                     days_held = 0
-                else:
-                    positions.loc[t, pair] = -1.0
-            else:
-                if (zt > ZSCORE_THRESHOLD) and below_2d.loc[t]:
-                    positions.loc[t, pair] = -1.0
-                    in_trade = True
+                elif (zt < -ZSCORE_THRESHOLD) and bool(above_2d.loc[t]):
+                    positions.loc[t, pair] = +1.0
+                    in_trade = +1
                     entry_dt = t
                     days_held = 0
                 else:
                     positions.loc[t, pair] = 0.0
+            else:
+                days_held += 1
+                # Exit conditions
+                if in_trade == -1:
+                    exit_now = bool(above_2d.loc[t]) or (days_held >= TIME_STOP_DAYS)
+                else:  # in_trade == +1
+                    exit_now = bool(below_2d.loc[t]) or (days_held >= TIME_STOP_DAYS)
+
+                if exit_now:
+                    positions.loc[t, pair] = 0.0
+                    trades.append({"pair": pair, "side": "short" if in_trade == -1 else "long",
+                                   "entry": entry_dt, "exit": t, "bars_held": days_held})
+                    in_trade = 0
+                    entry_dt = None
+                    days_held = 0
+                else:
+                    positions.loc[t, pair] = float(in_trade)
 
     # ── Returns and costs ──────────────────────────────────────────────────
     fx_close_df = pd.DataFrame(fx_close)
@@ -199,7 +193,6 @@ def run(csv_out: Path | None = None) -> dict:
     gross_port = gross_pair_ret.sum(axis=1)
     net_port = (gross_port - cost_total).dropna()
 
-    # Restrict to period where z-score window is fully populated (~5y burn-in)
     burn_in_start = pd.Timestamp(START) + pd.DateOffset(years=2)
     net_port = net_port[net_port.index >= burn_in_start]
     gross_port = gross_port.reindex(net_port.index)
@@ -220,34 +213,37 @@ def run(csv_out: Path | None = None) -> dict:
     s_net = stats(net_port)
     calmar = s_net["ann_ret"] / abs(s_net["max_dd"]) if s_net["max_dd"] != 0 else float("nan")
 
-    # Trade stats
     trades_df = pd.DataFrame(trades)
     n_trades = len(trades_df)
+    n_long = n_short = 0
     if n_trades > 0:
-        # Compute per-trade PnL
         for tr in trades:
             mask = (gross_pair_ret.index >= tr["entry"]) & (gross_pair_ret.index <= tr["exit"])
-            tr["trade_ret"] = float((gross_pair_ret.loc[mask, tr["pair"]]).sum())
+            tr["trade_ret"] = float(gross_pair_ret.loc[mask, tr["pair"]].sum())
         trades_df = pd.DataFrame(trades)
+        n_long = int((trades_df["side"] == "long").sum())
+        n_short = int((trades_df["side"] == "short").sum())
         win_rate = float((trades_df["trade_ret"] > 0).mean())
-        avg_trade_ret = float(trades_df["trade_ret"].mean())
-        avg_bars_held = float(trades_df["bars_held"].mean())
+        long_win = float((trades_df.loc[trades_df["side"] == "long", "trade_ret"] > 0).mean()) if n_long else float("nan")
+        short_win = float((trades_df.loc[trades_df["side"] == "short", "trade_ret"] > 0).mean()) if n_short else float("nan")
+        avg_trade = float(trades_df["trade_ret"].mean())
+        avg_bars = float(trades_df["bars_held"].mean())
     else:
-        win_rate = avg_trade_ret = avg_bars_held = float("nan")
+        win_rate = long_win = short_win = avg_trade = avg_bars = float("nan")
 
-    # ── Print summary ──────────────────────────────────────────────────────
     print("\n" + "=" * 70)
-    print(f"  Strategy #13 — CFTC positioning extreme + 21-DMA breakdown (short-only)")
+    print(f"  Strategy #13 — CFTC positioning extreme + 21-DMA reversal (long + short)")
     print("=" * 70)
     print(f"  Backtest range       : {net_port.index[0].date()} → {net_port.index[-1].date()}")
-    print(f"  Trades fired         : {n_trades}")
+    print(f"  Trades fired         : {n_trades}  ({n_long} long, {n_short} short)")
     if n_trades > 0:
-        print(f"  Win rate (gross)     : {win_rate*100:.1f}%")
-        print(f"  Avg trade return     : {avg_trade_ret*100:+.2f}%")
-        print(f"  Avg bars held        : {avg_bars_held:.1f}")
-        # Trades per pair
-        by_pair = trades_df.groupby("pair").size().to_dict()
-        print(f"  Trades per pair      : {by_pair}")
+        print(f"  Win rate (overall)   : {win_rate*100:.1f}%")
+        print(f"  Win rate (long)      : {long_win*100:.1f}%  ({n_long} trades)")
+        print(f"  Win rate (short)     : {short_win*100:.1f}%  ({n_short} trades)")
+        print(f"  Avg trade return     : {avg_trade*100:+.2f}%")
+        print(f"  Avg bars held        : {avg_bars:.1f}")
+        by_pair = trades_df.groupby(["pair", "side"]).size().to_dict()
+        print(f"  Trades per pair/side : {by_pair}")
     print()
     print(f"  {'':<18} {'GROSS':>10} {'NET':>10}")
     print(f"  {'Ann. Return':<18} {s_gross['ann_ret']*100:>9.2f}% {s_net['ann_ret']*100:>9.2f}%")
@@ -255,14 +251,12 @@ def run(csv_out: Path | None = None) -> dict:
     print(f"  {'Sharpe':<18} {s_gross['sharpe']:>10.2f} {s_net['sharpe']:>10.2f}")
     print(f"  {'Max Drawdown':<18} {s_gross['max_dd']*100:>9.2f}% {s_net['max_dd']*100:>9.2f}%")
     print(f"  {'Cumulative':<18} {s_gross['cum']*100:>9.2f}% {s_net['cum']*100:>9.2f}%")
-    print(f"  {'Hit Rate (daily)':<18} {s_gross['hit']*100:>9.2f}% {s_net['hit']*100:>9.2f}%")
     print(f"  {'Calmar (net)':<18} {' ':>10} {calmar:>10.2f}")
     print("=" * 70)
 
-    # ── Plot ───────────────────────────────────────────────────────────────
+    # Plot
     gross_curve = (1 + gross_port).cumprod()
     net_curve = (1 + net_port).cumprod()
-
     fig, axes = plt.subplots(2, 1, figsize=(13, 9),
                              gridspec_kw={"height_ratios": [3, 1]}, sharex=True)
     ax = axes[0]
@@ -273,9 +267,9 @@ def run(csv_out: Path | None = None) -> dict:
     ax.axhline(1.0, color="k", lw=0.5)
     ax.set_ylabel("Cumulative return (×)")
     ax.set_title(
-        f"Strategy #13 — CFTC positioning extreme + 21-DMA breakdown (short-only)\n"
+        f"Strategy #13 — CFTC positioning extreme + 21-DMA reversal (long + short)\n"
         f"{net_port.index[0].strftime('%Y-%m-%d')} to {END}  ·  "
-        f"{n_trades} trades  ·  net of {COST_ROUND_TRIP_PIPS:.0f} pips RT"
+        f"{n_trades} trades ({n_long}L / {n_short}S)  ·  net of {COST_ROUND_TRIP_PIPS:.0f} pips RT"
     )
     ax.legend(loc="upper left")
     ax.grid(True, alpha=0.3)
@@ -288,7 +282,7 @@ def run(csv_out: Path | None = None) -> dict:
     ax.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plot_out = REPORTS / "strategy_13_cot_extreme_short.png"
+    plot_out = REPORTS / "strategy_13_cot_extreme_long_short.png"
     plt.savefig(plot_out, dpi=150, bbox_inches="tight")
     plt.close(fig)
     print(f"\nPlot saved: {plot_out.relative_to(REPO)}")
@@ -305,15 +299,15 @@ def run(csv_out: Path | None = None) -> dict:
         out_df.index.name = "date"
         csv_out.parent.mkdir(parents=True, exist_ok=True)
         out_df.to_csv(csv_out, float_format="%.6f")
-        # Also save trade log
         trades_csv = csv_out.with_name(csv_out.stem + "_trades.csv")
         trades_df.to_csv(trades_csv, index=False)
         print(f"CSV saved : {csv_out.relative_to(REPO)}  ({len(out_df):,} rows)")
         print(f"Trade log : {trades_csv.relative_to(REPO)}  ({n_trades} trades)")
 
     return dict(net=s_net, gross=s_gross, calmar=calmar,
-                n_trades=n_trades, trades=trades_df if n_trades > 0 else None)
+                n_trades=n_trades, n_long=n_long, n_short=n_short,
+                trades=trades_df if n_trades > 0 else None)
 
 
 if __name__ == "__main__":
-    run(csv_out=TRACK / "strategy_13_cot_extreme_short_track_record.csv")
+    run(csv_out=TRACK / "strategy_13_cot_extreme_long_short_track_record.csv")

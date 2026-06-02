@@ -68,7 +68,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | **10** | **Vol-targeted portfolio (EUR, GBP, AUD, CAD)** | **2.70** |
 | 11 | Cross-sectional momentum portfolio (rejected — see [`strategies/rejected/`](strategies/rejected/)) | −0.34 |
 | **12** | **Calibrated vol-targeted portfolio (EUR, GBP, AUD, CAD)** | **2.73** |
-| 13 ⚠️ | CFTC positioning extreme + 21-DMA breakdown (short-only, 10 trades) | +0.28 |
+| 13 ⚠️ | CFTC positioning extreme + 21-DMA reversal (long+short, 30 trades) | −0.07 |
 
 ---
 

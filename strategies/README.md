@@ -20,7 +20,7 @@ All Strategies #1–#8 use the same rule: `pos[t+1] = sign(Δ(base 2Y − quote 
 | **10** | **Portfolio (core4)** | **2010–2024** | **2.70** | **+13.6%** | **−13.2%** | **Vol-targeted long/short of EURUSD, GBPUSD, AUDUSD, USDCAD** |
 | 11 ❌ | Cross-sectional momentum portfolio | 2010–2024 | **−0.34** | −2.3% | −39.4% | Tested and rejected — see [`rejected/`](rejected/) |
 | **12** | **Calibrated portfolio (core4)** | **2010–2024** | **2.73** | **+25.5%** | **−22.0%** | **Strategy #10 with ex-ante leverage scalar — hits 10% vol target, Calmar 1.16** |
-| 13 ⚠️ | CFTC positioning extreme + 21-DMA breakdown (short-only) | 2012–2024 | +0.28 | +0.5% | −4.7% | 10 trades, 40% win rate — positive expectancy but tiny sample |
+| 13 ⚠️ | CFTC positioning extreme + 21-DMA reversal (long+short) | 2012–2024 | −0.07 | −0.2% | −13.7% | 30 trades; short side 40% win, long side 30% win — asymmetry kills combined |
 
 **Key observations.**
 - 5 of 8 net Sharpes are >1.0; signal generalises broadly across G10 majors.
@@ -203,57 +203,69 @@ Average leverage scalar applied across the backtest: **2.19×** (consistent with
 
 ---
 
-## Strategy #13 — CFTC positioning extreme + 21-DMA breakdown (short-only)
+## Strategy #13 — CFTC positioning extreme + 21-DMA reversal (long AND short)
 
-**Hypothesis.** When speculative positioning in a pair becomes extremely crowded long (+2σ over a 5-year rolling window), the pair is set up for an unwind. Wait for technical confirmation — price closes below the 21-day moving average for 2 consecutive days — then go short. Exit when price closes back above 21-DMA for 2 days, or hard time-stop at 30 trading days.
+**Hypothesis.** When speculative positioning becomes extremely crowded (|z| > 2σ vs 5-year rolling window), the pair is set up for an unwind. Wait for technical confirmation — a 2-consecutive-day close through the 21-DMA in the unwind direction — then trade the reversal. Exit on mirror cross-back through 21-DMA (2 consecutive days) or hard time-stop at 30 trading days.
 
 **Signal stack.**
 ```
-setup[t]    : pair_positioning_z[t] > +2.0      # over 260-week rolling window
-trigger[t]  : close[t] < SMA21[t]  AND  close[t-1] < SMA21[t-1]
-entry       : setup AND trigger  → enter short, full notional
-exit        : (close[t] > SMA21[t] AND close[t-1] > SMA21[t-1])  OR  30 trading days elapsed
+SHORT side:
+  setup    : pair_positioning_z[t] > +2.0      # crowded long → due for unwind
+  trigger  : close[t] < SMA21[t]  AND  close[t-1] < SMA21[t-1]
+  exit     : (close > SMA21 for 2 days)  OR  30-day time stop
+
+LONG side:
+  setup    : pair_positioning_z[t] < −2.0      # crowded short → due for squeeze
+  trigger  : close[t] > SMA21[t]  AND  close[t-1] > SMA21[t-1]
+  exit     : (close < SMA21 for 2 days)  OR  30-day time stop
 ```
 
 Pair positioning is **sign-adjusted** to the pair direction: CFTC "long EUR" = "long EURUSD" (sign +1), but CFTC "long JPY" = "short USDJPY" (sign −1). The z-score is computed on the sign-adjusted series so the +2σ trigger is consistently "extreme long the pair" across the universe.
 
-**Realism.** CFTC reports are as-of Tuesday but published Friday afternoon. The strategy shifts COT data forward by 3 business days to use positioning only after its actual public availability time — no look-ahead.
+**Realism.** CFTC reports are as-of Tuesday but published Friday afternoon. COT data is shifted forward by 3 business days to use positioning only after its actual public availability time — no look-ahead.
 
 **Universe.** EURUSD, GBPUSD, AUDUSD, NZDUSD, USDJPY, USDCAD, USDCHF (the 7 G10 pairs with CFTC TFF data). SEK and NOK aren't on the TFF report.
 
-**Threshold note.** The original spec was +3σ, but empirically that never fires — CFTC positioning is bounded by open interest, and max observed z across all G10 pairs over 2013–2024 is +2.72 (GBPUSD). +2.0σ is the standard practitioner threshold for "crowded long" and gives a tradable sample.
+**Threshold note.** The original spec was ±3σ, but empirically that never fires — CFTC positioning is bounded by open interest, and max observed |z| across G10 over 2013–2024 is ~2.7 (GBPUSD) on the long side and 5.1 (USDJPY) on the short side. ±2.0σ is the standard practitioner threshold for "crowded" and gives a tradable sample.
 
 **Result** (2012–2024 effective backtest, daily, net of 5 pips RT):
 
 | Metric | **Net** | Gross |
 |---|---|---|
-| **Annualised Sharpe** | **+0.28** | +0.31 |
-| Annualised Return | +0.47% | +0.52% |
-| Annualised Vol | 1.67% | 1.67% |
-| Max Drawdown | −4.65% | −4.42% |
-| Cumulative (12y) | +6.36% | +6.98% |
-| **Trades fired** | **10** | (4 GBPUSD, 4 NZDUSD, 1 USDJPY, 1 USDCAD) |
-| Win rate | 40% (4/10) | |
-| Avg trade return | +0.76% | |
-| Avg bars held | 16.3 days | |
+| **Annualised Sharpe** | **−0.07** | −0.04 |
+| Annualised Return | −0.23% | −0.12% |
+| Annualised Vol | 3.20% | 3.20% |
+| Max Drawdown | −13.69% | −13.34% |
+| Cumulative (12y) | −3.68% | −2.23% |
+| **Trades fired** | **30** | (20 long, 10 short) |
+| Win rate (overall) | 33% | |
+| Avg trade return | −0.03% | |
+| Avg bars held | 14.8 days | |
 
-![Strategy #13 equity curve](../reports/strategy_13_cot_extreme_short.png)
+![Strategy #13 equity curve](../reports/strategy_13_cot_extreme_long_short.png)
 
-**Honest read.** The mechanic produces **positive expectancy** (avg trade +0.76%, 40% wins offset by larger winners) but the **sample is small** (N=10 over 12 years), capital efficiency is low (book is flat ~96% of days), and Sharpe of +0.28 is well below our 1.0 deployability threshold. EURUSD, AUDUSD, and USDCHF never reached the +2σ trigger at all — positioning in those pairs stays bounded by structural flows.
+**The asymmetry — the important finding here.** Splitting the result by side reveals what's actually going on:
 
-**What this v1 *is* useful for:** an honest evidence point that the *crowded-long → unwind* thesis is directionally correct (positive expectancy, not negative). What it's **not**: a deployable standalone strategy. Trades too rarely, sample too thin, edge too modest.
+| Side | Trades | Win rate | Read |
+|---|---|---|---|
+| **Short** (crowded long → unwind down) | 10 | **40%** ✓ | Thesis holds — same positive-expectancy result as the original short-only version |
+| **Long** (crowded short → squeeze up) | 20 | **30%** ✗ | Thesis fails — crowded shorts ≠ unwind setups |
+
+**Why the long side fails empirically.** Of the 20 long trades, **10 were USDJPY long** triggered when JPY was crowded short. JPY was structurally crowded short for most of 2013–2022 because of the carry trade — but the JPY kept *depreciating* against USD across that whole era. Positioning was extreme because the trend was real, not because it was about to reverse. Similar dynamics killed USDCAD long (5 trades) and USDCHF long (5 trades): structural shorts on safe-haven and commodity currencies don't unwind in the same crowded-long-mean-reverts way.
+
+**What this validates.** *Crowded longs unwind down* is an empirically real edge (40% wins on a small sample, but consistent). *Crowded shorts squeeze up* is an empirically weak premise — at least under this trigger spec on G10 majors. The book-level Sharpe is negative because the long side drags the short side's modest edge below zero.
 
 **Plausible next iterations.**
-- **Add the long side** (extreme short positioning + 21-DMA breakout) — likely doubles the trade count
-- **Relax threshold to +1.5σ** for a denser sample (with weaker per-trade edge, expect more trades)
-- **Use percentile-rank** instead of z-score (90th/95th percentile) — more robust to bounded positioning
-- **Combine with rate-diff signal** (the headline edge) as a confirmation overlay or sizing booster
+- **Revert to short-only** (the result we had before) and ship that as the deployable mechanic — or use a different long-side trigger that respects structural-short dynamics
+- **Asymmetric thresholds**: require higher |z| on the short side of CFTC positioning before going long (e.g., z < −3.0)
+- **Filter by trend regime**: only take long-side setups when pair is in a longer-term uptrend (e.g., above 200-DMA)
+- **Combine with rate-diff signal** (the headline edge) as a confirmation overlay
 
 **Data sources.** CFTC TFF Leveraged Money positioning (downloaded via `data/cftc.py`, cached locally). FX from yfinance.
 
-**Script.** [`strat_13_cot_extreme_short.py`](strat_13_cot_extreme_short.py)
-**CSV (returns).** [`../live/track_record/strategy_13_cot_extreme_short_track_record.csv`](../live/track_record/strategy_13_cot_extreme_short_track_record.csv)
-**Trade log.** [`../live/track_record/strategy_13_cot_extreme_short_track_record_trades.csv`](../live/track_record/strategy_13_cot_extreme_short_track_record_trades.csv)
+**Script.** [`strat_13_cot_extreme_long_short.py`](strat_13_cot_extreme_long_short.py)
+**CSV (returns).** [`../live/track_record/strategy_13_cot_extreme_long_short_track_record.csv`](../live/track_record/strategy_13_cot_extreme_long_short_track_record.csv)
+**Trade log.** [`../live/track_record/strategy_13_cot_extreme_long_short_track_record_trades.csv`](../live/track_record/strategy_13_cot_extreme_long_short_track_record_trades.csv)
 
 ---
 
