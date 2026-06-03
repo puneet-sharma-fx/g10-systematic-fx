@@ -22,6 +22,7 @@ All Strategies #1–#8 use the same rule: `pos[t+1] = sign(Δ(base 2Y − quote 
 | **12** | **Calibrated portfolio (core4)** | **2010–2024** | **2.73** | **+25.5%** | **−22.0%** | **Strategy #10 with ex-ante leverage scalar — hits 10% vol target, Calmar 1.16** |
 | 13 ⚠️ | CFTC positioning extreme + 21-DMA reversal (long+short) | 2012–2024 | −0.07 | −0.2% | −13.7% | 30 trades; short side 40% win, long side 30% win — asymmetry kills combined |
 | Tech sweep ⚠️ | 15 classic technical indicators × 3 majors (45 backtests) | 2010–2024 | best +0.14 | varies | varies | None deployable — best is TRIX on USDJPY. See [`technical/`](technical/) for full sweep |
+| **14** ⚠ | Calibrated portfolio + 50-DMA trend confirmation | 2010–2024 | **1.59** | +12.4% | −17.5% | Trend filter degrades the signal — confirms rate-diff *leads* trends rather than following them |
 
 **Key observations.**
 - 5 of 8 net Sharpes are >1.0; signal generalises broadly across G10 majors.
@@ -201,6 +202,46 @@ Average leverage scalar applied across the backtest: **2.19×** (consistent with
 
 **Script.** [`strat_12_g10_rate_diff_portfolio_calibrated.py`](strat_12_g10_rate_diff_portfolio_calibrated.py) (thin wrapper calling `strat_10.run(calibrate_leverage=True)`)
 **CSV.** [`../live/track_record/strategy_12_portfolio_calibrated_track_record.csv`](../live/track_record/strategy_12_portfolio_calibrated_track_record.csv)
+
+---
+
+## Strategy #14 — Calibrated portfolio + 50-DMA trend confirmation (negative finding)
+
+Identical to Strategy #12 in every respect except one: each pair's daily position is **dropped to zero** if its sign disagrees with the pair's 50-day SMA trend direction. The hypothesis was that adding a classic "trend confirmation" overlay would reduce drawdowns by skipping signal-but-wrong-regime trades.
+
+**Filter rule** (per pair, per day):
+```
+keep weight if sign(weight) × sign(close − 50-DMA) ≥ 0
+drop to 0 otherwise
+```
+
+**What happened.** The filter blocked **49.2% of weight-cells** — half the strategy's signals were "against trend" and got dropped. But this **degraded** the strategy materially:
+
+| Metric | **Strategy #14 (trend-filtered)** | Strategy #12 (no filter) — for reference |
+|---|---|---|
+| Annualised Return | +12.35% | +25.49% |
+| Annualised Vol | 7.76% | 9.32% |
+| **Sharpe** | **1.59** | **2.73** |
+| Max Drawdown | −17.52% | −22.01% |
+| **Calmar** | 0.70 | **1.16** |
+| Hit Rate | 48.39% | 57.18% |
+| Cumulative (15y) | +539% | +4,631% |
+
+![Strategy #14 equity curve](../reports/strategy_14_g10_rate_diff_portfolio_core4.png)
+
+**Why the filter *hurt* a working signal — the economic intuition.** The rate-diff signal catches policy/rate-shift events early. These events frequently coincide with the *start of trend reversals*. By systematically filtering out "against-trend" signals, the strategy removed many of the most profitable trades — the ones that *lead* trends rather than follow them. The signal works because it's contemporaneous with the rate-information flow, which often runs ahead of price-momentum signals.
+
+**What this validates.** The rate-diff signal is **not the kind that benefits from trend confirmation**. Classic trend filters are designed for signals where the underlying premise is "more of the same" (e.g., momentum); they hurt signals where the underlying premise is "an event has happened that will trigger a regime change."
+
+**Why we keep it in the main strategies folder (not rejected).** Sharpe 1.59 is still above our 1.0 deployability threshold, so the filtered version is *not* a failed strategy — it's a *worse* version of a working strategy. The research-trail value: we tried the textbook overlay, measured the effect, found the original is better. Some recruiters specifically ask "did you try a trend filter?" — this commit is the documented answer.
+
+**What this rules out for future iterations.** Don't add a generic trend filter on top of rate-diff signals. Plausible confirmations that might *help*:
+- **Volatility-regime filter** (only trade when realised vol is in a band) — different mechanism
+- **Stop-loss overlay** (cap individual position losses) — risk management, not signal selection
+- **Cross-pair signal agreement** (only take a long EUR if rate-diff also wants short USD vs other pairs)
+
+**Script.** [`strat_14_g10_rate_diff_portfolio_trend_filtered.py`](strat_14_g10_rate_diff_portfolio_trend_filtered.py)
+**CSV.** [`../live/track_record/strategy_14_portfolio_trend_filtered_track_record.csv`](../live/track_record/strategy_14_portfolio_trend_filtered_track_record.csv)
 
 ---
 

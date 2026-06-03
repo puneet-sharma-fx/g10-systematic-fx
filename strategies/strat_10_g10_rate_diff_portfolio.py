@@ -94,6 +94,8 @@ def run(
     max_leverage_scalar: float = 3.0,
     max_per_pair_levered: float = 0.60,
     strategy_number: int = 10,
+    trend_filter: bool = False,
+    trend_ma_period: int = 50,
 ) -> dict:
     label_max_per_pair = max_per_pair_levered if calibrate_leverage else MAX_PER_PAIR
     print(f"\nStrategy #{strategy_number} — vol-targeted G10 rate-differential portfolio"
@@ -104,6 +106,8 @@ def run(
     print(f"  Cost       : {COST_ROUND_TRIP_PIPS} pips round-trip")
     if calibrate_leverage:
         print(f"  Calibration: rolling {calibration_window}d realised-vol, max leverage {max_leverage_scalar:.1f}x")
+    if trend_filter:
+        print(f"  Trend filter: only positions agreeing with {trend_ma_period}-day SMA direction")
     print()
 
     pairs = UNIVERSES[universe_name]
@@ -159,6 +163,22 @@ def run(
 
     raw_w = z_clipped.div(fx_vol).mul(k, axis=0)
     weights = raw_w.clip(lower=-MAX_PER_PAIR, upper=MAX_PER_PAIR).fillna(0)
+
+    # Optional trend-confirmation filter: only keep positions whose direction
+    # agrees with the pair's longer-term trend (close vs N-day SMA).
+    if trend_filter:
+        trend_sign = pd.DataFrame(0.0, index=idx, columns=pair_names)
+        for name in pair_names:
+            ma = fx_close[name].rolling(trend_ma_period).mean()
+            trend_sign[name] = np.sign(fx_close[name] - ma).fillna(0)
+        w_sign = np.sign(weights)
+        # Keep where signs agree (product ≥ 0) — allows either being zero.
+        mask = (w_sign * trend_sign >= 0)
+        weights = weights.where(mask, 0)
+        n_blocked = int((~mask).values.sum())
+        n_total = int(mask.size)
+        print(f"  Trend filter blocked {n_blocked:,} of {n_total:,} "
+              f"weight-cells ({n_blocked/n_total*100:.1f}%)")
 
     # Apply tomorrow's position from today's signal
     weights = weights.shift(1).fillna(0)

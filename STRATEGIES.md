@@ -20,6 +20,7 @@ The core finding of the repo: **the change in 2Y rate differential predicts next
 | **2** | GBPUSD rate-diff | 2010-2024 | **1.50** | +13.1% | −25.8% | 0.51 |
 | **5** ⚠ | USDJPY rate-diff (brutal −59% DD) | 2010-2024 | **1.44** | +12.8% | **−59.2%** | 0.22 |
 | **3** | AUDUSD rate-diff | 2010-2024 | **1.22** | +12.8% | −23.0% | 0.56 |
+| **14** ⚠ | Calibrated portfolio + 50-DMA trend filter | 2010-2024 | **1.59** | +12.4% | −17.5% | 0.70 |
 
 ## ⚠ Borderline (Sharpe 0–1)
 
@@ -66,7 +67,7 @@ Anyone can re-derive Sharpe / DD / hit-rate from raw numbers. In [`live/track_re
 | **A real factor exists** | Strategies #1–#10: rate-diff signal works on 7 of 8 G10 pairs, generalises into portfolio |
 | **It's regime-robust** | Sub-period analysis shows positive in all four macro regimes (ZIRP / divergence / COVID / hiking) |
 | **It's correctly calibrated** | Strategy #12 fixes leverage to hit 10% vol target without changing Sharpe |
-| **Failures are documented honestly** | Momentum, positioning (long side), classic TA — all tested, all rejected with literature-citation context |
+| **Failures are documented honestly** | Momentum, positioning (long side), classic TA, trend-confirmation overlay — all tested, all rejected/degraded with literature-citation context |
 | **Results are auditable** | 6 daily-frequency CSVs let any reviewer recompute the headline numbers |
 
 ---
