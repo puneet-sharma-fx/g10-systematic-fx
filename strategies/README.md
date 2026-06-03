@@ -21,6 +21,7 @@ All Strategies #1–#8 use the same rule: `pos[t+1] = sign(Δ(base 2Y − quote 
 | 11 ❌ | Cross-sectional momentum portfolio | 2010–2024 | **−0.34** | −2.3% | −39.4% | Tested and rejected — see [`rejected/`](rejected/) |
 | **12** | **Calibrated portfolio (core4)** | **2010–2024** | **2.73** | **+25.5%** | **−22.0%** | **Strategy #10 with ex-ante leverage scalar — hits 10% vol target, Calmar 1.16** |
 | 13 ⚠️ | CFTC positioning extreme + 21-DMA reversal (long+short) | 2012–2024 | −0.07 | −0.2% | −13.7% | 30 trades; short side 40% win, long side 30% win — asymmetry kills combined |
+| Tech sweep ⚠️ | 15 classic technical indicators × 3 majors (45 backtests) | 2010–2024 | best +0.14 | varies | varies | None deployable — best is TRIX on USDJPY. See [`technical/`](technical/) for full sweep |
 
 **Key observations.**
 - 5 of 8 net Sharpes are >1.0; signal generalises broadly across G10 majors.
