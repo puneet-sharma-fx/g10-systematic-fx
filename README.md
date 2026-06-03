@@ -48,6 +48,10 @@ A weekly-rebalanced cross-sectional long/short strategy on 9 G10 pairs. Three in
 
 ---
 
+## Strategies index
+
+For a one-page summary of every strategy with headline metrics, see [**`STRATEGIES.md`**](STRATEGIES.md).
+
 ## Individual Strategies
 
 Numbered, self-contained single-purpose strategies that emerged from research adjacent to the main framework. Each is a standalone module under [`strategies/`](strategies/) with its own data layer, position rule, and reproducible script.
