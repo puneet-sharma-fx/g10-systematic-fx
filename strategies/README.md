@@ -23,6 +23,7 @@ All Strategies #1–#8 use the same rule: `pos[t+1] = sign(Δ(base 2Y − quote 
 | 13 ⚠️ | CFTC positioning extreme + 21-DMA reversal (long+short) | 2012–2024 | −0.07 | −0.2% | −13.7% | 30 trades; short side 40% win, long side 30% win — asymmetry kills combined |
 | Tech sweep ⚠️ | 15 classic technical indicators × 3 majors (45 backtests) | 2010–2024 | best +0.14 | varies | varies | None deployable — best is TRIX on USDJPY. See [`technical/`](technical/) for full sweep |
 | **14** ⚠ | Calibrated portfolio + 50-DMA trend confirmation | 2010–2024 | **1.59** | +12.4% | −17.5% | Trend filter degrades the signal — confirms rate-diff *leads* trends rather than following them |
+| 15 ❌ | EURUSD SMA20 + RSI(14) combo (long-only) | 2010–2024 | **−0.34** | −1.1% | −22.4% | Rejected — 24.5% win rate on classic technical confluence. See [`rejected/`](rejected/) |
 
 **Key observations.**
 - 5 of 8 net Sharpes are >1.0; signal generalises broadly across G10 majors.

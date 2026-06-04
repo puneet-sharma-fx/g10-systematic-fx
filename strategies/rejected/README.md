@@ -60,6 +60,45 @@ Sweep script: [`../../notebooks/explore_momentum_lookbacks.py`](../../notebooks/
 - **Time-series version**: each pair on its own merits (long if positive, short if negative) instead of cross-sectional ranking. Sometimes TS survives when XS fails — but given XS is negative at all horizons, expectations are low.
 - **Vol-managed momentum** (Barroso-Santa-Clara 2015): scale signal by recent realised vol. Generally improves momentum strategies after costs, but unlikely to flip a negative-Sharpe factor positive.
 
+---
+
+## Strategy #15 — EURUSD SMA(20) + RSI(14) combo (long-only)
+
+A classic textbook technical confluence: enter long when **both** of these fire within a 5-day rolling window:
+1. Close crosses above the 20-day SMA
+2. RSI(14) crosses up through 30 from below (oversold-recovery)
+
+Exit on 2 consecutive closes below the 21-day SMA, or 30-day time stop.
+
+**Result** (2010–2024, daily, net of 5 pips RT):
+
+| Metric | **Net** |
+|---|---|
+| **Sharpe** | **−0.34** |
+| Annualised Return | −1.08% |
+| Annualised Vol | 3.16% |
+| Max Drawdown | −22.40% |
+| Cumulative (15y) | **−16.03%** |
+| Trades fired | 49 |
+| Win rate | **24.5%** |
+| Avg trade return | −0.30% |
+| Avg bars held | 11.2 |
+
+![Strategy #15 equity curve](../../reports/rejected/strategy_15_eurusd_sma_rsi.png)
+
+**Why it failed.** A 24.5% win rate on a "long-only oversold recovery" strategy means the entry trigger fires at exactly the *wrong* times more often than not — typically catching late-stage oversold conditions where the trend keeps going. Same root cause as the 15-indicator sweep: in modern liquid EURUSD, classic single-pair technical patterns have no edge, and combining two of them doesn't add up to one that works (no "confluence premium").
+
+Consistent with the broader negative findings:
+- [Strategy #11 momentum](#strategy-11--cross-sectional-momentum-portfolio-weekly) — cross-sectional momentum negative at every lookback
+- [`../technical/`](../technical/) — 15 classic single-indicator strategies, 41 of 45 net Sharpes negative
+
+**What this confirms.** The classic technical-analysis playbook for FX is empirically dead in 2010–2024 liquid majors. Confluence combinations of MA-crossover + oscillator do not rescue the individual signals' poor performance.
+
+**Script.** [`strat_15_eurusd_sma_rsi_combo.py`](strat_15_eurusd_sma_rsi_combo.py)
+**Equity curve.** [`../../reports/rejected/strategy_15_eurusd_sma_rsi.png`](../../reports/rejected/strategy_15_eurusd_sma_rsi.png)
+**Track record CSV.** [`../../live/track_record/rejected/strategy_15_eurusd_sma_rsi_track_record.csv`](../../live/track_record/rejected/strategy_15_eurusd_sma_rsi_track_record.csv)
+**Trade log.** [`../../live/track_record/rejected/strategy_15_eurusd_sma_rsi_track_record_trades.csv`](../../live/track_record/rejected/strategy_15_eurusd_sma_rsi_track_record_trades.csv)
+
 **Sources.** FX prices: yfinance `EURUSD=X` etc. No external rate data needed.
 
 **Script.** [`strat_11_g10_momentum_portfolio.py`](strat_11_g10_momentum_portfolio.py)

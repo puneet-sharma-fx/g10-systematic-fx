@@ -74,6 +74,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | **12** | **Calibrated vol-targeted portfolio (EUR, GBP, AUD, CAD)** | **2.73** |
 | 13 ⚠️ | CFTC positioning extreme + 21-DMA reversal (long+short, 30 trades) | −0.07 |
 | 14 ⚠ | Calibrated portfolio + 50-DMA trend filter (degrades signal) | 1.59 |
+| 15 ❌ | EURUSD SMA20 + RSI(14) combo (rejected, 49 trades, 24.5% win) | −0.34 |
 
 ---
 
