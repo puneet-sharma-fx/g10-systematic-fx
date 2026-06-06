@@ -99,6 +99,57 @@ Consistent with the broader negative findings:
 **Track record CSV.** [`../../live/track_record/rejected/strategy_15_eurusd_sma_rsi_track_record.csv`](../../live/track_record/rejected/strategy_15_eurusd_sma_rsi_track_record.csv)
 **Trade log.** [`../../live/track_record/rejected/strategy_15_eurusd_sma_rsi_track_record_trades.csv`](../../live/track_record/rejected/strategy_15_eurusd_sma_rsi_track_record_trades.csv)
 
+---
+
+## Strategy #16 — VIX spike → safe-haven short (USDJPY + USDCHF)
+
+The first cross-asset macro test in the repo. The hypothesis was the textbook "flight to safety" pattern: when equity vol spikes (carry-trade unwind), capital flows into JPY and CHF, causing them to appreciate against USD. Trading rule:
+
+- **Signal**: VIX z-score > +1.0σ over a trailing 252-day window
+- **Action**: short USDJPY *and* short USDCHF (= long JPY + long CHF) for 10 trading days
+- **Holding window** rolls forward — sustained stress keeps the trade on
+
+**Result** (2011–2024 effective backtest, daily, net of 5 pips RT):
+
+| Metric | **Net** | Gross |
+|---|---|---|
+| **Sharpe** | **−0.39** | −0.36 |
+| Annualised Return | −4.04% | −3.79% |
+| Annualised Vol | 10.47% | 10.48% |
+| **Max Drawdown** | **−53.97%** | −52.50% |
+| Cumulative (14y) | **−48.49%** | −46.62% |
+| Hit Rate (daily) | 12.24% | 12.24% |
+| % time in trade | 27.0% | — |
+| Trigger days | 529 | — |
+
+![Strategy #16 equity curve](../../reports/rejected/strategy_16_vix_safe_haven.png)
+
+**Why it failed — the era-specific story.** The "safe-haven" narrative was empirically much weaker in 2010-2024 than the textbook suggests, and two structural shifts explain why:
+
+1. **The yen carry trade era (2013–2022).** BoJ's NIRP (2016) and YCC (2016+) policy made JPY the dominant funding currency for global carry. Even when VIX spiked, JPY often *kept depreciating* because the dominant flow was structural carry-funding outflow, not safe-haven inflow. The 2022 BoJ defence episode and the subsequent 2024 carry unwind are the only really clean "VIX-up → JPY-up" episodes in the period — and those are dwarfed by the multi-year depreciation trend.
+
+2. **CHF's safe-haven status broke on 15 Jan 2015.** When SNB abandoned the EUR/CHF 1.20 floor, CHF appreciated ~20% in a single day. After that, SNB intervention has been actively unpredictable, and CHF has not behaved like a clean safe haven in subsequent stress events — sometimes appreciating, sometimes not.
+
+3. **The 252-day z-score has built-in regime drift.** When VIX stays elevated for months (e.g., March–August 2020), the rolling mean rises with it, so the "+1σ above the mean" trigger eventually stops firing — but the strategy stays short during the very period when JPY recovery is most likely. The signal is late entering and slow exiting.
+
+**The 27% in-trade fraction** confirms this isn't a "one bad event" failure — the strategy was actively short for over a quarter of the 14 years and still lost 48% cumulative. The hypothesis is broadly wrong for this era, not narrowly mis-specified.
+
+**What this validates and what it rules out.**
+- Validates: the JPY safe-haven thesis is era-specific. It worked in 2007-2010 (GFC) but has been a poor predictor since QE/ZIRP became the global default.
+- Rules out: simple VIX-z-score → short USDJPY+USDCHF as a deployable strategy in modern G10 FX.
+
+**What might be salvageable (untested).**
+- **Different trigger**: realised FX vol spikes (USDJPY 1-week realised vol z-score) instead of VIX. More currency-specific.
+- **Different threshold**: +2σ instead of +1σ — far fewer triggers but each one corresponds to a "real" crisis (e.g., COVID March 2020, 2022 BoJ defence). Trade quality might compensate for trade count.
+- **Exit on JPY/CHF cross of MA** instead of fixed 10-day hold — would exit early when the move has played out.
+- **Only USDCHF**, excluding USDJPY entirely. JPY drags more than CHF in carry-trade eras.
+
+**Sources.** VIX from yfinance `^VIX`. FX spot from yfinance `USDJPY=X`, `USDCHF=X`.
+
+**Script.** [`strat_16_vix_safe_haven_short.py`](strat_16_vix_safe_haven_short.py)
+**Equity curve.** [`../../reports/rejected/strategy_16_vix_safe_haven.png`](../../reports/rejected/strategy_16_vix_safe_haven.png)
+**Track record CSV.** [`../../live/track_record/rejected/strategy_16_vix_safe_haven_track_record.csv`](../../live/track_record/rejected/strategy_16_vix_safe_haven_track_record.csv)
+
 **Sources.** FX prices: yfinance `EURUSD=X` etc. No external rate data needed.
 
 **Script.** [`strat_11_g10_momentum_portfolio.py`](strat_11_g10_momentum_portfolio.py)
