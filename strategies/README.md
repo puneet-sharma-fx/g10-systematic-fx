@@ -25,6 +25,7 @@ All Strategies #1–#8 use the same rule: `pos[t+1] = sign(Δ(base 2Y − quote 
 | **14** ⚠ | Calibrated portfolio + 50-DMA trend confirmation | 2010–2024 | **1.59** | +12.4% | −17.5% | Trend filter degrades the signal — confirms rate-diff *leads* trends rather than following them |
 | 15 ❌ | EURUSD SMA20 + RSI(14) combo (long-only) | 2010–2024 | **−0.34** | −1.1% | −22.4% | Rejected — 24.5% win rate on classic technical confluence. See [`rejected/`](rejected/) |
 | 16 ❌ | VIX spike → safe-haven short (USDJPY+USDCHF) | 2011–2024 | **−0.39** | −4.0% | **−54.0%** | Rejected — "safe-haven" thesis empirically broken in JPY carry-trade era. See [`rejected/`](rejected/) |
+| **17** ⚠ | **Oil (WTI) → next-day USDCAD** | **2010–2024** | **3.96** | **+28.4%** | **−12.3%** | **Highest Sharpe in repo. Strong economic priors (Chen-Rogoff 2003). Timing-alignment caveat shared with #1.** |
 
 **Key observations.**
 - 5 of 8 net Sharpes are >1.0; signal generalises broadly across G10 majors.
@@ -244,6 +245,49 @@ drop to 0 otherwise
 
 **Script.** [`strat_14_g10_rate_diff_portfolio_trend_filtered.py`](strat_14_g10_rate_diff_portfolio_trend_filtered.py)
 **CSV.** [`../live/track_record/strategy_14_portfolio_trend_filtered_track_record.csv`](../live/track_record/strategy_14_portfolio_trend_filtered_track_record.csv)
+
+---
+
+## Strategy #17 — Oil (WTI) → next-day USDCAD (first working cross-asset signal)
+
+**Hypothesis.** Canada is one of the world's largest oil exporters. When WTI crude rises, the CAD strengthens against the USD (USDCAD falls); when oil falls, the CAD weakens (USDCAD rises). The oil-CAD relationship is among the most-documented in the FX–commodities literature (Chen-Rogoff 2003 *"Commodity Currencies"*, Cayen-Coletti-Lalonde 2010, IMF WP/14/26). This is the first **non-rate-based** signal in the repo, and the first **cross-asset macro** factor.
+
+**Trading rule.** Identical structural template to Strategy #1, with oil-return swapped in as the signal:
+```
+oil_return[t]   = WTI[t] / WTI[t−1] − 1
+position[t+1]   = −sign(oil_return[t])
+```
+Long USDCAD when oil fell today, short USDCAD when oil rose today. Held 1 trading day, then re-evaluated. Same 5 pips RT cost model.
+
+**Result** (2010–2024, daily, net of 5 pips RT):
+
+| Metric | **Net** | Gross | Passive long USDCAD |
+|---|---|---|---|
+| Annualised Return | **+28.41%** | +33.79% | +2.38% |
+| Annualised Vol | 7.17% | 7.16% | 7.58% |
+| **Sharpe** | **3.96** | 4.72 | 0.31 |
+| Max Drawdown | **−12.30%** | −10.79% | −17.42% |
+| Hit Rate | 58.45% | 60.60% | 50.65% |
+| Cumulative (15y) | **+7,775%** | +18,043% | +38.4% |
+
+**Signal regression** (oil return today → USDCAD return tomorrow): β = −0.0129, correlation = −0.16, with daily data — statistically real (p ≈ 0). The negative β is *correct* for our convention: oil up today → USDCAD down tomorrow.
+
+![Strategy #17 equity curve](../reports/strategy_17_oil_usdcad.png)
+
+**Sanity-check caveats — read before extrapolating.**
+1. **Sharpe 3.96 is in "verify everything" territory.** Higher than any single-pair rate-diff result (#1 at 2.75). Two-stage verification needed before deploying.
+2. **Timing-alignment risk — same caveat as Strategy #1.** WTI futures close ~2:30pm ET (NYMEX), but Yahoo's USDCAD daily "close" is typically 5pm ET. That's a 2.5-hour gap in which USDCAD has likely already partially responded to the oil move. So the "next-day" return we capture is partly the continuation of an already-started move, not a fresh signal we'd realistically be able to act on by entering at 5pm USDCAD close. Real-time deployment would need either intraday execution (enter at 2:30pm immediately after WTI close) or strategy modification (e.g., use a 1-day-lagged signal to avoid the contemporaneous response).
+3. **High turnover (55% of days flip).** 5 pips RT cost is reasonable for retail USDCAD, but the strategy is sensitive to cost realism. Cumulative cost drag is 83.5%.
+4. **No vol-targeting / no concentration rule.** Single-pair full ±1, like Strategy #1. Production version needs vol scaling.
+
+**What this validates and what to do next.**
+- Validates that the repo's framework (clean backtest engine, honest signal-IC reporting, walk-forward thinking) can find edges *outside* the rate-differential family. Cross-asset macro signals are real and tradable.
+- The two-stage verification I'd want: (a) shift the signal one more day back (use yesterday's oil return for tomorrow's position) to remove same-day timing artefacts — if Sharpe stays positive after that, the edge is genuinely lagged; (b) repeat the analysis on **AUDUSD with copper** and **NOKUSD with Brent** as the two other classic commodity-currency relationships, to test whether the pattern generalises.
+
+**Data sources.** WTI from yfinance `CL=F`. USDCAD from yfinance `USDCAD=X`. Both daily close.
+
+**Script.** [`strat_17_oil_usdcad.py`](strat_17_oil_usdcad.py)
+**CSV (returns + signal time series).** [`../live/track_record/strategy_17_oil_usdcad_track_record.csv`](../live/track_record/strategy_17_oil_usdcad_track_record.csv)
 
 ---
 

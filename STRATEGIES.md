@@ -12,6 +12,7 @@ The core finding of the repo: **the change in 2Y rate differential predicts next
 
 | # | Strategy | Period | Net Sharpe | Ann. Ret | Max DD | Calmar |
 |---|---|---|---|---|---|---|
+| **17** ⚠ | **Oil (WTI) → next-day USDCAD** (first cross-asset, single pair) | 2010-2024 | **3.96** | +28.4% | −12.3% | **2.31** |
 | **12** | **Calibrated rate-diff portfolio** (core 4) | 2010-2024 | **2.73** | +25.5% | −22.0% | **1.16** |
 | **1** | EURUSD: Δ(EU 2Y − US 2Y) → next-day EURUSD | 2010-2024 | **2.75** | +22.9% | −15.3% | 1.50 |
 | **10** | Rate-diff portfolio (uncalibrated, 5% vol) | 2010-2024 | **2.70** | +13.6% | −13.2% | 1.03 |

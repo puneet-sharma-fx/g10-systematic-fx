@@ -44,6 +44,7 @@ Apply the same structure as Strategy #1 to the 8 remaining G10 pairs. For each p
 | **14** ⚠ | **Calibrated portfolio + trend filter** | Strategy #12 + per-pair 50-DMA trend confirmation; drop weight if signal disagrees with trend | Sharpe 1.59 (vs #12's 2.73). Filter blocked 49% of cells but **degraded** the signal — rate-diff *leads* trends so the confirmation filter removes the most profitable entries. |
 | 15 ❌ | EURUSD SMA20 + RSI(14) combo (long-only) | Classic textbook confluence: 20-DMA cross + RSI cross above 30 + 21-DMA exit | Rejected — Sharpe −0.34, 24.5% win rate. Classic technical playbook empirically dead on liquid EURUSD. See [`strategies/rejected/`](rejected/). |
 | 16 ❌ | VIX spike → safe-haven short (USDJPY+USDCHF) | VIX z > +1σ over 252d → short both pairs for 10d | Rejected — Sharpe −0.39, −54% max DD. Safe-haven thesis empirically broken in JPY carry-trade era (BoJ ZIRP+YCC dominated) and post-SNB-peg-break CHF. See [`strategies/rejected/`](rejected/). |
+| **17** ⚠ | **Oil (WTI) → next-day USDCAD** | pos[t+1] = −sign(oil_return[t]) — first non-rate-based cross-asset signal | ✅ Sharpe **3.96 net** (highest in repo). Strong economic priors (Chen-Rogoff 2003). Same timing caveat as #1 (Yahoo USDCAD close ≠ WTI close). |
 
 ---
 
