@@ -96,6 +96,7 @@ def run(
     strategy_number: int = 10,
     trend_filter: bool = False,
     trend_ma_period: int = 50,
+    equal_weight: bool = False,
 ) -> dict:
     label_max_per_pair = max_per_pair_levered if calibrate_leverage else MAX_PER_PAIR
     print(f"\nStrategy #{strategy_number} — vol-targeted G10 rate-differential portfolio"
@@ -108,6 +109,8 @@ def run(
         print(f"  Calibration: rolling {calibration_window}d realised-vol, max leverage {max_leverage_scalar:.1f}x")
     if trend_filter:
         print(f"  Trend filter: only positions agreeing with {trend_ma_period}-day SMA direction")
+    if equal_weight:
+        print(f"  Sizing: EQUAL-WEIGHT (sign(d_diff) × 1/N per pair — no z-score, no inverse-vol)")
     print()
 
     pairs = UNIVERSES[universe_name]
@@ -153,16 +156,24 @@ def run(
     z_clipped = z.clip(lower=-Z_CLIP, upper=Z_CLIP)
 
     # ── Sizing: scale to target portfolio vol ──────────────────────────────
-    # Assuming uncorrelated pairs:
-    #   portfolio_var(t) = sum_i (w_i * sigma_i)^2
-    # With w_i = z_clipped_i * k / sigma_i  →  w_i * sigma_i = z_clipped_i * k
-    #   portfolio_var(t) = k^2 * sum_i z_clipped_i^2
-    # Want sqrt(portfolio_var) = TARGET_VOL → k = TARGET_VOL / sqrt(sum_i z_clipped_i^2)
-    z2_sum_per_day = (z_clipped ** 2).sum(axis=1).replace(0, np.nan)
-    k = TARGET_VOL / np.sqrt(z2_sum_per_day)
-
-    raw_w = z_clipped.div(fx_vol).mul(k, axis=0)
-    weights = raw_w.clip(lower=-MAX_PER_PAIR, upper=MAX_PER_PAIR).fillna(0)
+    if equal_weight:
+        # Equal-weight benchmark: each pair gets ±1/N based on sign(d_diff).
+        # No z-score, no inverse-vol weighting, no concentration cap differences.
+        # If calibrate_leverage=True, the later rolling-vol scalar will still
+        # scale this up to hit the TARGET_VOL portfolio target.
+        n_pairs = len(pair_names)
+        weights = (np.sign(d_diff) / n_pairs).fillna(0)
+        weights = weights.clip(lower=-MAX_PER_PAIR, upper=MAX_PER_PAIR).fillna(0)
+    else:
+        # Z-score weighted, inverse-vol scaled. Assuming uncorrelated pairs:
+        #   portfolio_var(t) = sum_i (w_i * sigma_i)^2
+        # With w_i = z_clipped_i * k / sigma_i  →  w_i * sigma_i = z_clipped_i * k
+        #   portfolio_var(t) = k^2 * sum_i z_clipped_i^2
+        # Want sqrt(portfolio_var) = TARGET_VOL → k = TARGET_VOL / sqrt(sum_i z_clipped_i^2)
+        z2_sum_per_day = (z_clipped ** 2).sum(axis=1).replace(0, np.nan)
+        k = TARGET_VOL / np.sqrt(z2_sum_per_day)
+        raw_w = z_clipped.div(fx_vol).mul(k, axis=0)
+        weights = raw_w.clip(lower=-MAX_PER_PAIR, upper=MAX_PER_PAIR).fillna(0)
 
     # Optional trend-confirmation filter: only keep positions whose direction
     # agrees with the pair's longer-term trend (close vs N-day SMA).

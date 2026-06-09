@@ -77,6 +77,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | 15 ❌ | EURUSD SMA20 + RSI(14) combo (rejected, 49 trades, 24.5% win) | −0.34 |
 | 16 ❌ | VIX spike → short USDJPY+USDCHF (rejected, safe-haven thesis broken) | −0.39 |
 | **17** ⚠ | **Oil (WTI) → next-day USDCAD (first cross-asset signal)** | **3.96** |
+| **18** | **Equal-weight portfolio (diagnostic — beats #12, simpler wins)** | **2.90** |
 
 ---
 

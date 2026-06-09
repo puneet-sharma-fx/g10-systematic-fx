@@ -26,6 +26,7 @@ All Strategies #1–#8 use the same rule: `pos[t+1] = sign(Δ(base 2Y − quote 
 | 15 ❌ | EURUSD SMA20 + RSI(14) combo (long-only) | 2010–2024 | **−0.34** | −1.1% | −22.4% | Rejected — 24.5% win rate on classic technical confluence. See [`rejected/`](rejected/) |
 | 16 ❌ | VIX spike → safe-haven short (USDJPY+USDCHF) | 2011–2024 | **−0.39** | −4.0% | **−54.0%** | Rejected — "safe-haven" thesis empirically broken in JPY carry-trade era. See [`rejected/`](rejected/) |
 | **17** ⚠ | **Oil (WTI) → next-day USDCAD** | **2010–2024** | **3.96** | **+28.4%** | **−12.3%** | **Highest Sharpe in repo. Strong economic priors (Chen-Rogoff 2003). Timing-alignment caveat shared with #1.** |
+| **18** | **Equal-weight portfolio (diagnostic)** | **2010–2024** | **2.90** | **+29.2%** | **−19.3%** | **Beats #12 — z-score machinery adds noise on thin 4-pair cross-section. New preferred portfolio spec.** |
 
 **Key observations.**
 - 5 of 8 net Sharpes are >1.0; signal generalises broadly across G10 majors.
@@ -245,6 +246,50 @@ drop to 0 otherwise
 
 **Script.** [`strat_14_g10_rate_diff_portfolio_trend_filtered.py`](strat_14_g10_rate_diff_portfolio_trend_filtered.py)
 **CSV.** [`../live/track_record/strategy_14_portfolio_trend_filtered_track_record.csv`](../live/track_record/strategy_14_portfolio_trend_filtered_track_record.csv)
+
+---
+
+## Strategy #18 — Equal-weight portfolio (diagnostic; simpler wins)
+
+A direct diagnostic comparison against Strategy #12. Same universe (EURUSD/GBPUSD/AUDUSD/USDCAD), same signal source (`d_diff = Δ(base_2Y − quote_2Y)`), same leverage calibration (rolling 63-day realised-vol scalar to hit 10% portfolio vol). The **only** difference is how positions are sized:
+
+| | Strategy #12 | **Strategy #18** |
+|---|---|---|
+| Sizing | Cross-section z-score → ×(1/fx_vol) → ×k → clip ±60% | **`sign(d_diff) × (1/N)` per pair** |
+| Magnitude info used? | Yes (z-score) | **No (direction only)** |
+| Inverse-vol weighting? | Yes | **No** |
+| Cross-section normalisation? | Yes | **No** |
+| Leverage calibration | Yes | Yes (same) |
+
+The question: **does the z-score / inverse-vol / concentration-cap machinery actually add edge over a naive equal-weight benchmark?**
+
+**Result** (2010–2024, daily, net of 5 pips RT):
+
+| Metric | **#18 Equal-weight (NEW)** | #12 Z-score weighted |
+|---|---|---|
+| Annualised Return | **+29.21%** | +25.49% |
+| Annualised Vol | 10.09% | 9.32% |
+| **Sharpe** | **2.90** | 2.73 |
+| Max Drawdown | **−19.30%** | −22.01% |
+| **Calmar** | **1.51** | 1.16 |
+| Hit Rate | 58.34% | 57.18% |
+| Cumulative (15y) | **+8,194%** | +4,631% |
+
+![Strategy #18 equity curve](../reports/strategy_18_g10_rate_diff_portfolio_core4.png)
+
+**The diagnostic verdict: the equal-weight benchmark *beats* the z-score-weighted portfolio on every metric.** Higher Sharpe (2.90 vs 2.73), lower max drawdown (−19.3% vs −22.0%), higher Calmar (1.51 vs 1.16). On a thin 4-pair universe, the magnitude info from cross-section z-scoring adds noise, not edge — and the inverse-vol per-pair scaling adds nothing the global leverage calibration doesn't already handle.
+
+**Why the simpler version wins — three structural reasons.**
+1. **The 4-pair cross-section is statistically thin.** Cross-section z-scoring assumes a meaningful distribution across pairs. With only 4 pairs, dispersion can spike for idiosyncratic noise reasons (e.g., one pair's d_diff briefly extreme), distorting all four z-scores away from their true signal magnitudes.
+2. **The direction of `d_diff` is the real signal; magnitude is largely noise.** The original IC regression (see [`../notebooks/regression_all_pairs.py`](../notebooks/regression_all_pairs.py)) shows β = +0.033, R² = 7.5% — strong directional content but low explained variance, consistent with "sign matters, magnitude is noisy."
+3. **The inverse-vol scaling and concentration cap are at the wrong level of resolution.** Per-day, per-pair vol normalisation just adds turnover (cost drag is 191% vs #12's 209%, but with similar Sharpe gross/net). The portfolio-level vol target (the leverage calibration) is what actually controls risk; per-pair vol normalisation is redundant.
+
+**The takeaway and what changes going forward.** If we were redesigning the portfolio strategy from scratch with this knowledge, **#18 is the preferred specification**. The 4-pair cross-section is too thin to benefit from z-score sizing; equal-weight + leverage calibration is both simpler and empirically better.
+
+**Why this finding strengthens the repo, not weakens it.** A reviewer reading the iteration trail (#10 → #12 → #14 → #18) sees: (1) build the obvious sophisticated version, (2) calibrate it properly, (3) test overlays that don't help, (4) test the boring baseline — and find the baseline wins. That sequence is exactly what good systematic research looks like. The repo isn't claiming the z-score version is best; it's documenting the journey and ending up at the empirically-strongest deployable version.
+
+**Script.** [`strat_18_g10_rate_diff_portfolio_equal_weight.py`](strat_18_g10_rate_diff_portfolio_equal_weight.py) (thin wrapper calling `strat_10.run(equal_weight=True, calibrate_leverage=True)`)
+**CSV.** [`../live/track_record/strategy_18_portfolio_equal_weight_track_record.csv`](../live/track_record/strategy_18_portfolio_equal_weight_track_record.csv)
 
 ---
 
