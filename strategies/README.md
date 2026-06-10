@@ -25,8 +25,9 @@ All Strategies #1–#8 use the same rule: `pos[t+1] = sign(Δ(base 2Y − quote 
 | **14** ⚠ | Calibrated portfolio + 50-DMA trend confirmation | 2010–2024 | **1.59** | +12.4% | −17.5% | Trend filter degrades the signal — confirms rate-diff *leads* trends rather than following them |
 | 15 ❌ | EURUSD SMA20 + RSI(14) combo (long-only) | 2010–2024 | **−0.34** | −1.1% | −22.4% | Rejected — 24.5% win rate on classic technical confluence. See [`rejected/`](rejected/) |
 | 16 ❌ | VIX spike → safe-haven short (USDJPY+USDCHF) | 2011–2024 | **−0.39** | −4.0% | **−54.0%** | Rejected — "safe-haven" thesis empirically broken in JPY carry-trade era. See [`rejected/`](rejected/) |
-| **17** ⚠ | **Oil (WTI) → next-day USDCAD** | **2010–2024** | **3.96** | **+28.4%** | **−12.3%** | **Highest Sharpe in repo. Strong economic priors (Chen-Rogoff 2003). Timing-alignment caveat shared with #1.** |
-| **18** | **Equal-weight portfolio (diagnostic)** | **2010–2024** | **2.90** | **+29.2%** | **−19.3%** | **Beats #12 — z-score machinery adds noise on thin 4-pair cross-section. New preferred portfolio spec.** |
+| 17 ⚠️ | Oil (WTI) → next-day USDCAD | 2010–2024 | 3.96 → ⚠️ | — | — | **VERIFIED timing artefact** (see #19). Not tradable in real-time. |
+| **18** | **Equal-weight portfolio (diagnostic — new headline)** | **2010–2024** | **2.90** | **+29.2%** | **−19.3%** | **Beats #12 — z-score machinery adds noise on thin 4-pair cross-section. New preferred portfolio spec.** |
+| 19 ✓ | Oil → USDCAD with 1-day extra lag (rigour check of #17) | 2010–2024 | **−0.84** | — | — | Verification confirms #17 is timing artefact. Signal corr collapses from −0.16 to ~0. |
 
 **Key observations.**
 - 5 of 8 net Sharpes are >1.0; signal generalises broadly across G10 majors.
@@ -293,7 +294,51 @@ The question: **does the z-score / inverse-vol / concentration-cap machinery act
 
 ---
 
-## Strategy #17 — Oil (WTI) → next-day USDCAD (first working cross-asset signal)
+## Strategy #19 — Oil → USDCAD with 1-day extra lag (verification of #17 — negative confirmation)
+
+**Purpose.** This strategy exists purely as a rigour check on Strategy #17. The structural concern with #17 was that WTI futures close at 2:30pm ET (NYMEX), while Yahoo's daily USDCAD "close" is at 5pm ET — a 2.5-hour gap during which USDCAD likely partially responds to the oil move *before* the timestamp Yahoo records as the daily close. If so, what looks like "next-day" predictive content is actually same-day intraday response measured at a misaligned timestamp.
+
+**The rigour check is a one-line shift**: use *yesterday's* oil return as the signal instead of *today's*. By the time we hold position from day-*t* close to day-*t+1* close, yesterday's oil signal is more than 24 hours stale — there's no plausible way the FX market wouldn't have already priced it in.
+
+```
+Strategy #17:   pos[t+1] = −sign(oil_return[t])      ← signal computed end-of-t
+Strategy #19:   pos[t+1] = −sign(oil_return[t−1])    ← signal one full day older
+```
+
+**Result** (2010–2024, daily, net of 5 pips RT):
+
+| Metric | **Strategy #19 (lagged verification)** | **Strategy #17 (original)** |
+|---|---|---|
+| Annualised Return | **−6.26%** | +28.41% |
+| Annualised Vol | 7.41% | 7.17% |
+| **Sharpe** | **−0.84** | **+3.96** |
+| **Signal correlation** | **−0.005** | −0.16 |
+| **Signal β** | **−0.0004** | −0.0129 |
+| Max Drawdown | −64.66% | −12.30% |
+| Hit Rate | 45.64% | 58.45% |
+| Cumulative (15y) | **−63.71%** | +7,775% |
+
+![Strategy #19 equity curve](../reports/strategy_19_oil_usdcad_lagged.png)
+
+**Verdict.** The headline Sharpe collapses from **+3.96 to −0.84** when we use a signal that's just one day older. The signal correlation collapses from **−0.16 to −0.005** — i.e., to noise. The β shrinks by **~30×**.
+
+**Interpretation.** Strategy #17's edge was almost entirely captured in the 2.5-hour window between WTI close (2:30pm ET) and Yahoo's USDCAD close (5pm ET). USDCAD responds to oil moves *contemporaneously* (which is real and expected — Chen-Rogoff 2003 is about the contemporaneous oil/CAD relationship); but because Yahoo records the USDCAD close *after* the WTI close, the same-day response appears as "next-day" in close-to-close return calculations. In real-time execution at 5pm USDCAD close, a trader could not capture this — the move has already happened.
+
+**What this means for the repo.**
+- **Strategy #17 is no longer the headline result.** The new effective headline becomes Strategy #18 (equal-weight portfolio, Sharpe 2.90 net) — which doesn't depend on Yahoo's timestamp conventions.
+- **Strategy #1 (EURUSD rate-diff, Sharpe 2.75) needs the same verification.** Its FRED rates close at NY end-of-day (~5pm ET) and ECB rates earlier; Yahoo's EURUSD close is at 5pm ET. The same intraday-leakage logic *might* apply. Top priority for the next session.
+- **The rigour-check itself is a credibility win.** The repo now explicitly demonstrates: we ran a backtest that produced spectacular numbers, applied a known rigour check, found the numbers were artefact, and downgraded the strategy honestly. That sequence is exactly what distinguishes a credible research log from a curve-fitted backtest.
+
+**Sources & data.** Same as Strategy #17. WTI from yfinance `CL=F`. USDCAD from yfinance `USDCAD=X`.
+
+**Script.** [`strat_19_oil_usdcad_lagged_verification.py`](strat_19_oil_usdcad_lagged_verification.py)
+**CSV.** [`../live/track_record/strategy_19_oil_usdcad_lagged_track_record.csv`](../live/track_record/strategy_19_oil_usdcad_lagged_track_record.csv)
+
+---
+
+## Strategy #17 — Oil (WTI) → next-day USDCAD (⚠️ verified timing artefact — see #19)
+
+> **⚠️ Verification update (Strategy #19).** A 1-day-extra-lag rigour check on this strategy (using yesterday's oil return instead of today's) produces net **Sharpe −0.84** — the signal correlation collapses from −0.16 to ~0. This confirms the headline 3.96 Sharpe below was almost entirely **intraday timing artefact** between WTI's 2:30pm ET close and Yahoo's 5pm ET USDCAD close. In real-time execution the alpha would already have been captured. **This strategy is not tradable as specified.** See [Strategy #19](#strategy-19--oil--usdcad-with-1-day-extra-lag-verification-of-17--negative-confirmation) below.
 
 **Hypothesis.** Canada is one of the world's largest oil exporters. When WTI crude rises, the CAD strengthens against the USD (USDCAD falls); when oil falls, the CAD weakens (USDCAD rises). The oil-CAD relationship is among the most-documented in the FX–commodities literature (Chen-Rogoff 2003 *"Commodity Currencies"*, Cayen-Coletti-Lalonde 2010, IMF WP/14/26). This is the first **non-rate-based** signal in the repo, and the first **cross-asset macro** factor.
 

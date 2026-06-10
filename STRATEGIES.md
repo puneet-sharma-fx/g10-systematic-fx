@@ -12,10 +12,9 @@ The core finding of the repo: **the change in 2Y rate differential predicts next
 
 | # | Strategy | Period | Net Sharpe | Ann. Ret | Max DD | Calmar |
 |---|---|---|---|---|---|---|
-| **17** ⚠ | **Oil (WTI) → next-day USDCAD** (first cross-asset, single pair) | 2010-2024 | **3.96** | +28.4% | −12.3% | **2.31** |
 | **18** | **Equal-weight rate-diff portfolio** (preferred portfolio spec) | 2010-2024 | **2.90** | +29.2% | −19.3% | **1.51** |
-| **12** | **Calibrated rate-diff portfolio** (core 4, z-score-weighted) | 2010-2024 | **2.73** | +25.5% | −22.0% | **1.16** |
 | **1** | EURUSD: Δ(EU 2Y − US 2Y) → next-day EURUSD | 2010-2024 | **2.75** | +22.9% | −15.3% | 1.50 |
+| **12** | **Calibrated rate-diff portfolio** (core 4, z-score-weighted) | 2010-2024 | **2.73** | +25.5% | −22.0% | **1.16** |
 | **10** | Rate-diff portfolio (uncalibrated, 5% vol) | 2010-2024 | **2.70** | +13.6% | −13.2% | 1.03 |
 | **6** | USDCAD rate-diff | 2010-2024 | **2.06** | +15.2% | −14.8% | 1.03 |
 | **8** ⚠ | USDSEK rate-diff (cost-model caveat) | 2012-2024 | **2.13** | +21.4% | −15.7% | 1.36 |
@@ -41,6 +40,8 @@ The core finding of the repo: **the change in 2Y rate differential predicts next
 | **Tech sweep ⚠** | 15 classic technical indicators × 3 majors | best +0.14 | None deployable; consistent with Park-Irwin 2007 |
 | **15** ❌ | EURUSD SMA20 + RSI(14) combo (long-only) | −0.34 | 49 trades, 24.5% win rate. Classic confluence doesn't work on liquid EURUSD |
 | **16** ❌ | VIX spike → safe-haven short (USDJPY + USDCHF) | −0.39 | Safe-haven thesis empirically broken in JPY carry-trade era + post-SNB CHF |
+| **17** ⚠ | Oil (WTI) → next-day USDCAD (timing artefact) | 3.96 → ⚠ | Verified by #19: collapses to −0.84 with 1-day extra lag. Captures intraday WTI-USDCAD response in Yahoo close-time gap. Not tradable real-time. |
+| **19** ✓ | Oil → USDCAD with 1-day lag (rigour check) | −0.84 | Verification of #17 — confirms it was timing artefact. Signal correlation collapses from −0.16 to ~0. |
 
 ## 🔬 Supporting analyses (diagnostics & rigour checks)
 
