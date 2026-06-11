@@ -28,6 +28,7 @@ All Strategies #1–#8 use the same rule: `pos[t+1] = sign(Δ(base 2Y − quote 
 | 17 ⚠️ | Oil (WTI) → next-day USDCAD | 2010–2024 | 3.96 → ⚠️ | — | — | **VERIFIED timing artefact** (see #19). Not tradable in real-time. |
 | **18** | **Equal-weight portfolio (diagnostic — new headline)** | **2010–2024** | **2.90** | **+29.2%** | **−19.3%** | **Beats #12 — z-score machinery adds noise on thin 4-pair cross-section. New preferred portfolio spec.** |
 | 19 ✓ | Oil → USDCAD with 1-day extra lag (rigour check of #17) | 2010–2024 | **−0.84** | — | — | Verification confirms #17 is timing artefact. Signal corr collapses from −0.16 to ~0. |
+| 20 ⚠ | Classical vol-normalised carry (LEVEL, Dupuy 2021 spec) | 2010–2024 | **0.07** | +0.4% | −20.9% | Confirms post-2008 carry decay; LEVEL signal dead in this era. See [STRATEGIES.md](../STRATEGIES.md#strategy-20--classical-vol-normalised-carry-g10-monthly-rebalance) for annotated details. |
 
 **Key observations.**
 - 5 of 8 net Sharpes are >1.0; signal generalises broadly across G10 majors.

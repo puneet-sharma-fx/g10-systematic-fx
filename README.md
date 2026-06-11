@@ -79,6 +79,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | 17 ⚠ | Oil (WTI) → next-day USDCAD (⚠ verified timing artefact — see #19) | 3.96 → ⚠ |
 | **18** | **Equal-weight portfolio (NEW HEADLINE)** | **2.90** |
 | 19 | Oil → USDCAD with 1-day extra lag (rigour check of #17) | −0.84 |
+| 20 ⚠ | Classical vol-normalised carry (LEVEL signal, Dupuy 2021 spec) | 0.07 |
 
 ---
 

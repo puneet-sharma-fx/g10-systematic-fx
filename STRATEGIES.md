@@ -28,6 +28,7 @@ The core finding of the repo: **the change in 2Y rate differential predicts next
 | # | Strategy | Period | Net Sharpe | Notes |
 |---|---|---|---|---|
 | **4** | NZDUSD rate-diff | 2016-2024 | 0.92 | NZ data starts 2016, shorter sample |
+| **20** | Classical vol-normalised carry (Dupuy 2021 spec, monthly) | 2010-2024 | 0.07 | Confirms post-2008 carry decay; LEVEL signal nearly dead in this era |
 
 ## ❌ Failed / rejected / inconclusive
 
@@ -90,3 +91,45 @@ Anyone can re-derive Sharpe / DD / hit-rate from raw numbers. In [`live/track_re
 - **Python**: pandas, numpy, scipy, statsmodels, matplotlib
 - **Backtesting**: bespoke walk-forward + event-driven engines (no `backtrader` / `vectorbt` dependency for the published strategies)
 - **Cost model**: 5 pips round-trip (2.5 pips per unit of position turnover), pip-size aware per pair (JPY = 0.01)
+
+---
+
+# Strategy Details (annotated format)
+
+> *Each strategy below follows the same format: explanation, results, and a variable glossary that defines every code-level parameter / variable used in the implementation. Strategy #20 is the first to use this format; others to follow.*
+
+---
+
+## Strategy #20 — Classical vol-normalised carry (G10, monthly rebalance)
+
+**Explanation.** Each month-end, computes the vol-normalised carry score for each G10 pair as `(base 2Y rate − quote 2Y rate) / 30-day realised FX vol`. Ranks all 7 G10 pairs by this score, goes long the top-2 (highest vol-adjusted carry — the "best risk-adjusted yielders") and short the bottom-2 (lowest, typically the lowest-yielders). Each position is sized at 1/4 of capital, so total gross exposure is 100% (50% long / 50% short, dollar-neutral). Holds positions for one month, then re-ranks at the next month-end. This is the **classical level-based carry** signal — fundamentally different from our `d_diff`-based strategies (#1, #18) which use the *change* in rate differential.
+
+**Result** (2010–2024, monthly, net of 5 pips RT cost):
+Net Sharpe **0.07**, annual return **+0.44%**, max DD **−20.85%**, monthly skew **−0.07** (does NOT confirm Dupuy's +0.97 positive-skew claim for the pre-2020 era). The result confirms the post-2008 carry decay documented in the literature ("Benchmark carry SR ~0.06 post-2008 vs ~0.76 pre-crisis") and demonstrates *why* our change-based `d_diff` approach (Strategy #18 Sharpe 2.90 net) dominates the classical level-based carry on the same 2010–2024 universe.
+
+**Variables (code-level glossary).**
+
+| Variable | Meaning (5–10 words) |
+|---|---|
+| `rate_diff[pair, t]` | LEVEL of base 2Y yield minus quote 2Y yield |
+| `realised_vol[pair, t]` | 30-day rolling stdev of FX returns, annualised |
+| `score[pair, t]` | Vol-normalised carry signal: `rate_diff / realised_vol` |
+| `weights_monthly[pair, t]` | End-of-month portfolio weight per pair |
+| `positions_monthly[pair, t]` | Weights shifted +1 month for next-month return |
+| `N_LONG`, `N_SHORT` | Number of pairs in long/short legs (= 2 each) |
+| `LEG_WEIGHT` | Per-position weight: `1 / (N_LONG + N_SHORT)` = 0.25 |
+| `VOL_WINDOW_DAYS` | Realised vol lookback in trading days (= 30) |
+| `COST_ROUND_TRIP_PIPS` | Total bid-ask round-trip cost in pips (= 5.0) |
+| `cost_unit_pips` | Half of round-trip cost (= 2.5 pips per unit traded) |
+| `pip_size` | Smallest quote increment (0.0001, except JPY = 0.01) |
+| `turnover[pair, t]` | Absolute change in weight from previous month |
+| `cost_per_pair[pair, t]` | Per-pair monthly cost: `turnover × cost_unit / spot` |
+| `gross_port_monthly[t]` | Sum of `positions × pair_returns` across pairs |
+| `net_port_monthly[t]` | Gross monthly return minus total cost |
+| `monthly_skew` | Skewness of net monthly returns (Dupuy's tail-risk metric) |
+
+**Data sources.** 2Y yields cached at `data/raw/tvc_2y_yields.csv` (TVC via tvDatafeed, 9 currencies). FX from yfinance (e.g. `EURUSD=X`).
+**Reference.** Dupuy, P. (2021). *"Risk-Adjusted Return Managed Carry Trade"*, Journal of Banking & Finance.
+**Script.** [`strategies/strat_20_vol_normalised_carry.py`](strategies/strat_20_vol_normalised_carry.py)
+**Track record CSV.** [`live/track_record/strategy_20_vol_normalised_carry_track_record.csv`](live/track_record/strategy_20_vol_normalised_carry_track_record.csv)
+**Equity curve.** [`reports/strategy_20_vol_normalised_carry.png`](reports/strategy_20_vol_normalised_carry.png)
