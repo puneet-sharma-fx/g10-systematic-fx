@@ -52,34 +52,39 @@ A weekly-rebalanced cross-sectional long/short strategy on 9 G10 pairs. Three in
 
 For a one-page summary of every strategy with headline metrics, see [**`STRATEGIES.md`**](STRATEGIES.md).
 
+## ⚠️ Critical caveat (2026-06-12)
+
+**Strategy #21 (1-day-extra-lag rigour check on Strategy #1) collapsed the Sharpe from +2.75 to −0.58**, with signal correlation dropping from +0.27 to +0.028. The entire rate-diff family below (Strategies #1–#10, #12, #18) uses the same `d_diff` signal structure and almost certainly contains the same intraday timing leakage between FRED/ECB rate-close timestamps and Yahoo's 5pm ET FX close. Sharpes shown below are **historical-record artefacts, not deployable edges** until rebuilt with properly time-aligned data. The repo is in active reconstruction mode.
+
 ## Individual Strategies
 
 Numbered, self-contained single-purpose strategies that emerged from research adjacent to the main framework. Each is a standalone module under [`strategies/`](strategies/) with its own data layer, position rule, and reproducible script.
 
 See [`strategies/README.md`](strategies/README.md) for the full list with results, charts, and caveats.
 
-| # | Title | Net Sharpe |
+| # | Title | Apparent Net Sharpe |
 |---|---|---|
-| 1 | Δ(EU 2Y − US 2Y) → next-day EURUSD | 2.75 |
-| 2 | Δ(GB 2Y − US 2Y) → next-day GBPUSD | 1.50 |
-| 3 | Δ(AU 2Y − US 2Y) → next-day AUDUSD | 1.22 |
-| 4 | Δ(NZ 2Y − US 2Y) → next-day NZDUSD | 0.92 |
-| 5 | Δ(US 2Y − JP 2Y) → next-day USDJPY | 1.44 |
-| 6 | Δ(US 2Y − CA 2Y) → next-day USDCAD | 2.06 |
-| 7 | Δ(US 2Y − CH 2Y) → next-day USDCHF | 0.00 |
-| 8 | Δ(US 2Y − SE 2Y) → next-day USDSEK | 2.13 ⚠️ |
-| 9 | Δ(US 2Y − NO 2Y) → next-day USDNOK | deferred — NO 2Y data unavailable |
-| **10** | **Vol-targeted portfolio (EUR, GBP, AUD, CAD)** | **2.70** |
+| 1 ⚠ | Δ(EU 2Y − US 2Y) → next-day EURUSD (**verified timing artefact by #21**) | 2.75 → ⚠ |
+| 2 ⚠ | Δ(GB 2Y − US 2Y) → next-day GBPUSD (likely timing artefact) | 1.50 → ⚠ |
+| 3 ⚠ | Δ(AU 2Y − US 2Y) → next-day AUDUSD (likely timing artefact) | 1.22 → ⚠ |
+| 4 ⚠ | Δ(NZ 2Y − US 2Y) → next-day NZDUSD (likely timing artefact) | 0.92 → ⚠ |
+| 5 ⚠ | Δ(US 2Y − JP 2Y) → next-day USDJPY (likely timing artefact) | 1.44 → ⚠ |
+| 6 ⚠ | Δ(US 2Y − CA 2Y) → next-day USDCAD (likely timing artefact) | 2.06 → ⚠ |
+| 7 | Δ(US 2Y − CH 2Y) → next-day USDCHF (never worked) | 0.00 |
+| 8 ⚠ | Δ(US 2Y − SE 2Y) → next-day USDSEK (timing + cost artefact) | 2.13 → ⚠ |
+| 9 | Δ(US 2Y − NO 2Y) → next-day USDNOK (deferred — NO 2Y data unavailable) | — |
+| **10** ⚠ | Vol-targeted rate-diff portfolio (likely timing artefact) | 2.70 → ⚠ |
 | 11 | Cross-sectional momentum portfolio (rejected — see [`strategies/rejected/`](strategies/rejected/)) | −0.34 |
-| **12** | **Calibrated vol-targeted portfolio (EUR, GBP, AUD, CAD)** | **2.73** |
+| **12** ⚠ | Calibrated rate-diff portfolio (likely timing artefact) | 2.73 → ⚠ |
 | 13 ⚠️ | CFTC positioning extreme + 21-DMA reversal (long+short, 30 trades) | −0.07 |
-| 14 ⚠ | Calibrated portfolio + 50-DMA trend filter (degrades signal) | 1.59 |
+| 14 ⚠ | Calibrated portfolio + 50-DMA trend filter (degrades signal + timing) | 1.59 → ⚠ |
 | 15 ❌ | EURUSD SMA20 + RSI(14) combo (rejected, 49 trades, 24.5% win) | −0.34 |
 | 16 ❌ | VIX spike → short USDJPY+USDCHF (rejected, safe-haven thesis broken) | −0.39 |
-| 17 ⚠ | Oil (WTI) → next-day USDCAD (⚠ verified timing artefact — see #19) | 3.96 → ⚠ |
-| **18** | **Equal-weight portfolio (NEW HEADLINE)** | **2.90** |
-| 19 | Oil → USDCAD with 1-day extra lag (rigour check of #17) | −0.84 |
+| 17 ⚠ | Oil (WTI) → next-day USDCAD (verified timing artefact — see #19) | 3.96 → ⚠ |
+| **18** ⚠ | Equal-weight rate-diff portfolio (former headline, likely timing artefact) | 2.90 → ⚠ |
+| 19 ✓ | Oil → USDCAD with 1-day extra lag (rigour check of #17) | −0.84 |
 | 20 ⚠ | Classical vol-normalised carry (LEVEL signal, Dupuy 2021 spec) | 0.07 |
+| **21** ✓ | **EURUSD rate-diff with 1-day extra lag (rigour check of #1 — the big finding)** | **−0.58** |
 
 ---
 

@@ -2,6 +2,12 @@
 
 Numbered, self-contained single-purpose strategies. Each is a standalone module with its own data layer, position rule, and reproducible script.
 
+> ## ⚠️ Critical caveat — Strategy #21 finding (2026-06-12)
+>
+> **Strategy #21** applied a 1-day-extra-lag rigour check to Strategy #1 (EURUSD rate-diff). Net Sharpe collapsed from **+2.75 to −0.58**; signal correlation from **+0.27 to +0.028**. The entire rate-diff family below (Strategies **#1–#10, #12, #18**) uses the same `d_diff` signal structure and almost certainly contains the same intraday timing leakage between FRED/ECB rate-close timestamps and Yahoo's 5pm ET FX close.
+>
+> **All apparent Sharpes in the rate-diff sections below should be read as data-alignment artefacts**, not deployable edges — until rebuilt with synchronised end-of-day fixings. The repo's iteration trail (apparent edge → rigour check → honest downgrade) is preserved in git history. The detailed per-strategy sections below have NOT been retroactively edited to remove their previous "working" language; the caveat block above supersedes them.
+
 ## Summary table
 
 All Strategies #1–#8 use the same rule: `pos[t+1] = sign(Δ(base 2Y − quote 2Y)[t])`, held 1 day, 5 pips round-trip cost.

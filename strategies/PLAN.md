@@ -1,7 +1,7 @@
 # Plan: Cross-G10 Extension of the Rate-Differential Signal
 
-**Date**: May 2026
-**Status**: Planning — implementation in progress (Strategies #2–#9)
+**Date**: May 2026 (original plan)
+**Status (2026-06-12)**: ⚠️ The entire rate-diff family was flagged as timing artefact by Strategy #21's verification of #1. The "extension" results below printed positive Sharpes but those Sharpes are likely data-alignment artefacts, not deployable edges. Repo is in active reconstruction mode pending properly time-aligned signals.
 
 ---
 
@@ -48,6 +48,7 @@ Apply the same structure as Strategy #1 to the 8 remaining G10 pairs. For each p
 | **18** | **Equal-weight portfolio (new headline)** | Same as #12 but `sign(d_diff) × (1/N)` sizing (no z-score, no inverse-vol) | ✅ Sharpe **2.90 net** (vs #12's 2.73). Calmar 1.51. **Z-score machinery adds noise** on 4-pair cross-section; direction is the signal, magnitude is noise. New preferred portfolio spec. |
 | 19 ✓ | Oil → USDCAD with 1-day extra lag (verification of #17) | pos[t+1] = −sign(oil_return[t−1]) | ✅ Negative-result verification. Sharpe −0.84, signal corr collapses from −0.16 to ~0. Confirms #17 was timing artefact. |
 | 20 ⚠ | Classical vol-normalised carry (Dupuy 2021 spec) | `(rate_base − rate_quote) / 30d realised vol` on LEVEL, monthly long top-2 / short bottom-2 | ⚠ Sharpe **0.07** net, skew −0.07. Confirms post-2008 carry decay (literature: 0.76 pre-crisis → 0.06 post-crisis). Vol-normalisation doesn't rescue LEVEL signal in this era. Direct contrast with our `d_diff` (change) approach (#18 SR 2.90). |
+| **21** ✓ | **EURUSD rate-diff with 1-day extra lag (rigour check of #1)** | `pos[t+1] = sign(d_diff[t−1])` — uses yesterday's d_diff to predict tomorrow's EURUSD | ✅ **The most important verification in the repo.** Sharpe collapses from +2.75 to **−0.58**. Signal corr collapses from +0.27 to +0.028, β shrinks ~10×. **Confirms #1 was timing artefact; the entire rate-diff family is flagged.** |
 
 ---
 

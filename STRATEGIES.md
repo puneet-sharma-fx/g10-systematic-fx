@@ -18,22 +18,28 @@ For full per-strategy details: [`strategies/README.md`](strategies/README.md). F
 
 ---
 
-## ✅ Working strategies (net Sharpe > 1)
+## ⚠ Rate-diff family (Sharpes >1 but verified timing artefact — see #21)
 
-The core finding of the repo: **the change in 2Y rate differential predicts next-day FX**, generalises across G10, and survives as a portfolio.
+The original core finding was that **the change in 2Y rate differential predicts next-day FX**. Strategy #21 (1-day-extra-lag rigour check on Strategy #1) showed Sharpe collapses from +2.75 to −0.58 and signal correlation from +0.27 to +0.028. **All strategies below use the same `d_diff` signal structure and likely contain the same intraday timing leakage between FRED/ECB rate-close timestamps and Yahoo's 5pm ET FX close.** Apparent Sharpes shown for historical record; not deployable at 5pm ET FX-close entry without proper time-aligned data.
 
-| # | Strategy | Period | Net Sharpe | Ann. Ret | Max DD | Calmar |
-|---|---|---|---|---|---|---|
-| **18** | **Equal-weight rate-diff portfolio** (preferred portfolio spec) | 2010-2024 | **2.90** | +29.2% | −19.3% | **1.51** |
-| **1** | EURUSD: Δ(EU 2Y − US 2Y) → next-day EURUSD | 2010-2024 | **2.75** | +22.9% | −15.3% | 1.50 |
-| **12** | **Calibrated rate-diff portfolio** (core 4, z-score-weighted) | 2010-2024 | **2.73** | +25.5% | −22.0% | **1.16** |
-| **10** | Rate-diff portfolio (uncalibrated, 5% vol) | 2010-2024 | **2.70** | +13.6% | −13.2% | 1.03 |
-| **6** | USDCAD rate-diff | 2010-2024 | **2.06** | +15.2% | −14.8% | 1.03 |
-| **8** ⚠ | USDSEK rate-diff (cost-model caveat) | 2012-2024 | **2.13** | +21.4% | −15.7% | 1.36 |
-| **2** | GBPUSD rate-diff | 2010-2024 | **1.50** | +13.1% | −25.8% | 0.51 |
-| **5** ⚠ | USDJPY rate-diff (brutal −59% DD) | 2010-2024 | **1.44** | +12.8% | **−59.2%** | 0.22 |
-| **3** | AUDUSD rate-diff | 2010-2024 | **1.22** | +12.8% | −23.0% | 0.56 |
-| **14** ⚠ | Calibrated portfolio + 50-DMA trend filter | 2010-2024 | **1.59** | +12.4% | −17.5% | 0.70 |
+| # | Strategy | Period | Apparent Net Sharpe | Status |
+|---|---|---|---|---|
+| **18** | Equal-weight rate-diff portfolio | 2010-2024 | 2.90 | ⚠ Timing artefact (likely) |
+| **1** | EURUSD: Δ(EU 2Y − US 2Y) → next-day EURUSD | 2010-2024 | 2.75 → ⚠ | **Verified by #21**: collapses to −0.58 with 1-day lag |
+| **12** | Calibrated rate-diff portfolio (core 4) | 2010-2024 | 2.73 | ⚠ Timing artefact (likely) |
+| **10** | Rate-diff portfolio (uncalibrated) | 2010-2024 | 2.70 | ⚠ Timing artefact (likely) |
+| **8** | USDSEK rate-diff (cost caveat) | 2012-2024 | 2.13 | ⚠ Timing artefact + cost model artefact |
+| **6** | USDCAD rate-diff | 2010-2024 | 2.06 | ⚠ Timing artefact (likely) |
+| **14** | Calibrated portfolio + 50-DMA trend filter | 2010-2024 | 1.59 | ⚠ Timing artefact (likely) |
+| **2** | GBPUSD rate-diff | 2010-2024 | 1.50 | ⚠ Timing artefact (likely) |
+| **5** | USDJPY rate-diff (brutal −59% DD) | 2010-2024 | 1.44 | ⚠ Timing artefact + DD |
+| **3** | AUDUSD rate-diff | 2010-2024 | 1.22 | ⚠ Timing artefact (likely) |
+
+**Pending verification.** Strategy #21 confirmed the artefact for #1 specifically. To confirm or rule out for the other strategies, repeat the 1-day-extra-lag test on each. Strategy #19 already confirmed the same artefact pattern for the cross-asset Oil/USDCAD case (#17 → #19).
+
+## ✅ Working strategies (verified, net Sharpe > 1)
+
+*Currently no strategies survive the time-alignment rigour check above. Repo is in active reconstruction mode pending properly time-aligned signals.*
 
 ## ⚠ Borderline (Sharpe 0–1)
 
@@ -55,6 +61,7 @@ The core finding of the repo: **the change in 2Y rate differential predicts next
 | **16** ❌ | VIX spike → safe-haven short (USDJPY + USDCHF) | −0.39 | Safe-haven thesis empirically broken in JPY carry-trade era + post-SNB CHF |
 | **17** ⚠ | Oil (WTI) → next-day USDCAD (timing artefact) | 3.96 → ⚠ | Verified by #19: collapses to −0.84 with 1-day extra lag. Captures intraday WTI-USDCAD response in Yahoo close-time gap. Not tradable real-time. |
 | **19** ✓ | Oil → USDCAD with 1-day lag (rigour check) | −0.84 | Verification of #17 — confirms it was timing artefact. Signal correlation collapses from −0.16 to ~0. |
+| **21** ✓ | EURUSD rate-diff with 1-day lag (rigour check) | −0.58 | **The most important verification in the repo.** Confirms #1's edge was timing artefact; entire rate-diff family flagged. Signal corr collapses from +0.27 to +0.028. |
 
 ## 🔬 Supporting analyses (diagnostics & rigour checks)
 
