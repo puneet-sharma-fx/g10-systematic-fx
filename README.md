@@ -87,6 +87,8 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | **21** ✓ | **EURUSD rate-diff with 1-day extra lag (rigour check of #1 — the big finding)** | **−0.58** |
 | **22** 🛡️ | **Carry crash filter overlay (VIX + self-momentum) on #18** — Brunnermeier 2009 | **Sharpe flat (2.90→2.91), vol −17%, MaxDD −7%** |
 | **23** ❌ | Donchian/ATR breakout with trailing stop (core4, 60d/1.5 ATR/2.5 ATR) — TA-in-FX dead (Park-Irwin 2007) | **−0.18** |
+| **24a** ❌ | Classic Turtle Trading System 1 with last-loser filter (20d/10d/2N) — **filter dead-lock**, only 7 trades / 15y | **−0.01** (~flat) |
+| **24b** ❌ | Turtle System 1 without filter (pure 20d/10d/2N) — whipsaw graveyard, 689 trades, PF 0.87 | **−0.28** |
 
 ---
 

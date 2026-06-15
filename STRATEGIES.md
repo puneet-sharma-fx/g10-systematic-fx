@@ -69,6 +69,8 @@ The original core finding was that **the change in 2Y rate differential predicts
 | **19** ✓ | Oil → USDCAD with 1-day lag (rigour check) | −0.84 | Verification of #17 — confirms it was timing artefact. Signal correlation collapses from −0.16 to ~0. |
 | **21** ✓ | EURUSD rate-diff with 1-day lag (rigour check) | −0.58 | **The most important verification in the repo.** Confirms #1's edge was timing artefact; entire rate-diff family flagged. Signal corr collapses from +0.27 to +0.028. |
 | **23** ❌ | Donchian/ATR breakout with trailing stop (core4, 60d/1.5 ATR/2.5 ATR) | −0.18 | **Third independent confirmation of TA-in-FX dead** (after #11 momentum and the 15-indicator tech sweep). 23 trades over 15 years, 34.8% win rate, profit factor 0.60. Daily skew −2.13 (single-day stop hits dominate). EURUSD alone profitable (4 trades, PF 7.84); GBPUSD chopped (PF 0.16). NOT a timing artefact — uses only FX OHLC. Consistent with Park-Irwin 2007. |
+| **24a** ❌ | Canonical Turtle System 1 (20d entry / 10d exit / 2N stop / last-loser filter) | −0.01 | **Filter dead-lock pathology.** Only 7 trades over 15 years (filter froze the strategy after each winner). 57% win rate, profit factor 1.02. Avg gross exposure 0.6% — strategy is essentially "do nothing." |
+| **24b** ❌ | Turtle System 1 without filter (pure 20d/10d/2N) | −0.28 | **Whipsaw graveyard.** 689 trades over 15 years (11/pair/year), 34.7% win rate, profit factor 0.87. Active losses from chop, MaxDD −28.5%. Confirms classical Turtle parameters do not extract edge from G10 FX. |
 
 ## 🔬 Supporting analyses (diagnostics & rigour checks)
 
@@ -244,3 +246,54 @@ Net Sharpe **0.07**, annual return **+0.44%**, max DD **−20.85%**, monthly ske
 **Track record CSV.** [`live/track_record/strategy_23_atr_breakout_track_record.csv`](live/track_record/strategy_23_atr_breakout_track_record.csv)
 **Trade log CSV.** [`live/track_record/strategy_23_atr_breakout_track_record_trades.csv`](live/track_record/strategy_23_atr_breakout_track_record_trades.csv)
 **Equity curve.** [`reports/strategy_23_atr_breakout_trailing_stop.png`](reports/strategy_23_atr_breakout_trailing_stop.png)
+
+---
+
+## Strategy #24 — Classic Turtle Trading System 1 (filter ON vs OFF, REJECTED both)
+
+**Explanation.** The most-documented breakout system in trading history — the 1984 Dennis-Eckhardt rules published by Curtis Faith in *"Way of the Turtle"* (2007). Per-pair rules: 20-day breakout entry (no ATR buffer — break the prior 20-day max/min of closes); 10-day reversion exit (close drops below the prior 10-day low for longs, the symmetric for shorts); fixed 2N hard stop at entry where N is 20-day ATR; one position at a time per pair; sized equal-weight 1/N. The defining feature is the **last-trade-loser filter**: skip a System 1 entry signal if the previous completed trade was a winner; take it only if the previous trade was a loser (or there is no prior history). The filter is meant to weed out chop after exhausted trends. Run on the same core4 universe as #23 for direct comparison. **Two variants are run in the same module** so we can isolate the filter's contribution: #24a with filter ON, #24b with filter OFF.
+
+**Result** (2010–2024, daily, net of 5 pips RT cost): **both rejected, for different reasons**.
+
+*#24a (filter ON, canonical Turtle):* Sharpe **−0.01**, ann return ~0.00%, MaxDD **−2.20%**, daily skew **−7.16**. **Only 7 trades over 15 years**. 57.1% win rate, profit factor 1.02. **Avg gross exposure 0.6%** — the strategy is essentially "do nothing." This exposes the **filter dead-lock pathology**: after the first trade on a pair wins, the filter blocks every subsequent entry signal until a loser is taken, but you can't take any signals because the filter is blocking them. EURUSD is permanently frozen after its single 1-trade winner; GBPUSD permanently frozen after its single 1-trade winner. The few trades that DO happen are because the next-after-a-loser permission temporarily un-freezes the pair. 1,940 entry signals were rejected by the filter across all four pairs.
+
+*#24b (filter OFF, pure 20/10/2N breakout):* Sharpe **−0.28**, ann return **−1.43%**, MaxDD **−28.45%**, daily skew −0.17. **689 trades** (11.1 per pair per year), 34.7% win rate, profit factor **0.87**. Avg gross exposure 69.8%. **Active losses from whipsaws** — the strategy is in the market 70% of the time but loses on costs and chop. Confirms what the literature has been saying for decades: classical Turtle parameters worked spectacularly on commodities and currency *futures* in the 1980s when trends were strong and longer-lasting, but they do not extract net edge from G10 *spot FX* in the post-GFC era. This is now the **fourth independent confirmation of TA-in-FX dead** in this repo, alongside #11 momentum, the 15-indicator technical sweep, and #23 wider-window Donchian.
+
+**Variables (code-level glossary).**
+
+| Variable | Meaning (5–10 words) |
+|---|---|
+| `atr[t]` | 20-day mean of true range (Turtle's "N") |
+| `entry_high[t]` | 20-day rolling max of close, shifted 1d (resistance) |
+| `entry_low[t]` | 20-day rolling min of close, shifted 1d (support) |
+| `exit_high[t]` | 10-day rolling max of close, shifted 1d (short reversion exit) |
+| `exit_low[t]` | 10-day rolling min of close, shifted 1d (long reversion exit) |
+| `ATR_PERIOD` | True-range averaging window (= 20 days, Turtle's "N") |
+| `ENTRY_BREAKOUT_LOOKBACK` | Entry window in days (= 20) |
+| `EXIT_REVERSION_LOOKBACK` | Exit window in days (= 10) |
+| `HARD_STOP_ATR_MULT` | Hard stop distance from entry (= 2.0 × N) |
+| `USE_LAST_LOSER_FILTER` | Toggle for the canonical Turtle filter |
+| `in_signal_state_prev` | Did yesterday have an active breakout signal? |
+| `new_signal_event` | True only on the FIRST day a fresh breakout fires |
+| `has_trade_history` | Has at least one trade closed on this pair? |
+| `last_trade_won` | Was the most recent completed trade profitable? |
+| `take_trade` | Filter result: take or skip the current signal? |
+| `stop_level[pair]` | Fixed hard stop at entry (does NOT trail) |
+| `entry_atr[pair]` | N at entry — defines the hard stop distance |
+| `n_skipped` | Count of NEW signal events rejected by filter |
+| `exit_reason` | Either "stop" (hard stop hit) or "reversion" (10d exit) |
+| `weights[pair, t]` | Per-pair portfolio weight: `position / N_pairs` |
+| `turnover[pair, t]` | `|weights_lag.diff()|` — drives cost |
+| `n_stop_exits`, `n_reversion_exits` | Decomposition of exits by reason |
+
+**Data sources.** yfinance daily OHLC (`EURUSD=X`, `GBPUSD=X`, `AUDUSD=X`, `USDCAD=X`).
+**Reference.** Faith, Curtis (2007). *"Way of the Turtle: The Secret Methods that Turned Ordinary People into Legendary Traders"*, McGraw-Hill. Original Dennis-Eckhardt 1984 informal rules. Also Park & Irwin (2007), JES 21(4), for the TA-in-FX dead-since-1990s literature.
+**Script.** [`strategies/strat_24_turtle_trading_system1.py`](strategies/strat_24_turtle_trading_system1.py)
+**Track record CSVs.**
+- [`live/track_record/strategy_24a_turtle_system1_filter_on_track_record.csv`](live/track_record/strategy_24a_turtle_system1_filter_on_track_record.csv) (filter ON)
+- [`live/track_record/strategy_24b_turtle_system1_filter_off_track_record.csv`](live/track_record/strategy_24b_turtle_system1_filter_off_track_record.csv) (filter OFF)
+- Trade logs for each, named `*_trades.csv`.
+
+**Equity curves.**
+- [`reports/strategy_24_turtle_system1_filter_on.png`](reports/strategy_24_turtle_system1_filter_on.png)
+- [`reports/strategy_24_turtle_system1_filter_off.png`](reports/strategy_24_turtle_system1_filter_off.png)
