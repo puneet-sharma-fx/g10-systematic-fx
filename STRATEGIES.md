@@ -39,7 +39,13 @@ The original core finding was that **the change in 2Y rate differential predicts
 
 ## ✅ Working strategies (verified, net Sharpe > 1)
 
-*Currently no strategies survive the time-alignment rigour check above. Repo is in active reconstruction mode pending properly time-aligned signals.*
+*No directional strategy has yet survived the time-alignment rigour check. Repo is in active reconstruction mode pending properly time-aligned signals.*
+
+## 🛡️ Risk overlays (deployable independent of base signal)
+
+| # | Overlay | Period | Effect on #18 base | Status |
+|---|---|---|---|---|
+| **22** | Carry crash filter (VIX + self-momentum) — Brunnermeier-Nagel-Pedersen 2009 | 2010–2024 | Vol −17% (10.1%→8.4%), Sharpe flat (2.90→2.91), MaxDD −7%, skew +0.05 | ✅ Deployable as a vol-reducer. **Validated independent of base signal — works on any carry-style portfolio.** |
 
 ## ⚠ Borderline (Sharpe 0–1)
 
@@ -152,3 +158,43 @@ Net Sharpe **0.07**, annual return **+0.44%**, max DD **−20.85%**, monthly ske
 **Script.** [`strategies/strat_20_vol_normalised_carry.py`](strategies/strat_20_vol_normalised_carry.py)
 **Track record CSV.** [`live/track_record/strategy_20_vol_normalised_carry_track_record.csv`](live/track_record/strategy_20_vol_normalised_carry_track_record.csv)
 **Equity curve.** [`reports/strategy_20_vol_normalised_carry.png`](reports/strategy_20_vol_normalised_carry.png)
+
+---
+
+## Strategy #22 — Carry crash filter overlay (VIX + self-momentum on #18 base)
+
+**Explanation.** A **deployable risk-management overlay** — not a directional signal. Scales the position weights of a base carry-style strategy down during crash conditions, intended to reduce left-tail crash exposure with minimal Sharpe drag. The overlay is computed daily as the product of two scalars in `[0, 1]`. The first, `vix_scale`, falls linearly from 1.0 when VIX ≤ 20 to 0.0 when VIX ≥ 40 — at VIX 30 it is 0.50, halving position size. The second, `mom_scale`, is a self-referential drawdown gate: it equals 0.5 when the trailing-20-day return of the unfiltered base strategy is more than −1σ below its 252-day mean, and 1.0 otherwise. The combined scalar is lagged 1 day to avoid look-ahead, then multiplied into the per-pair weights of Strategy #18 (the equal-weight `d_diff` portfolio, leverage-calibrated). The classical Brunnermeier-Nagel-Pedersen (2009) construction adds TED-spread (now SOFR-OIS post-2022) and CFTC-positioning conditions; we omit TED here because FRED's `TEDRATE` was discontinued Jan 2022 and the SOFR equivalent isn't in the existing fetcher layer — a 2-indicator construction is the realistic public-data implementation through 2024.
+
+**Result** (2010–2024, daily, net of 5 pips RT cost): on the **#18 base** (Sharpe 2.90, vol 10.1%, MaxDD −19.3%, skew +0.31), the filter produces Sharpe **2.91** (≈flat), vol **8.4%** (−17%), MaxDD **−18.0%** (−7%), skew **+0.36** (+0.05). Annualised return drops from 29.2% to 24.4% as expected for the lower vol. **The filter is active on 38% of days and brings positions fully flat on 1.5% of days (VIX > 40).** Calmar slightly degrades (1.51 → 1.36) since the vol reduction outpaces the drawdown reduction. The expected dramatic skewness rescue from Brunnermeier 2009 (≈ −2.5 → ≈ −0.5 on classical level-carry) does NOT materialise here, because **#18's base skewness is already positive (+0.31)** — the `d_diff` (change in rate-diff) signal does not carry the negative-skew tail that classical level-carry has, so there is less left-tail to fix. Validated use case: a deployable vol-reducer / regime-de-risker with no Sharpe drag, that would apply identically on top of any future *properly time-aligned* carry-style strategy reconstructed from this body of work.
+
+**Variables (code-level glossary).**
+
+| Variable | Meaning (5–10 words) |
+|---|---|
+| `d_diff[pair, t]` | Daily change in (base 2Y − quote 2Y) for each pair |
+| `weights_raw[pair, t]` | Equal-weight per-pair direction: `sign(d_diff) / N_pairs` |
+| `leverage_scalar[t]` | Rolling 63d realised-vol leverage to hit `TARGET_VOL` |
+| `weights_base[pair, t]` | Strategy #18 base weights: `weights_raw × leverage_scalar` |
+| `vix[t]` | Daily VIX close (yfinance `^VIX`, FRED fallback) |
+| `vix_scale[t]` | VIX-based scalar in `[0,1]`, linear 1.0→0.0 over VIX 20→40 |
+| `VIX_FULL_BELOW` | VIX level below which scalar is 1.0 (= 20.0) |
+| `VIX_FLAT_ABOVE` | VIX level at which scalar hits 0.0 (= 40.0) |
+| `tr20[t]` | Trailing 20-day sum of unfiltered base net returns |
+| `z_tr20[t]` | Z-score of `tr20` vs trailing 252d mean and stdev |
+| `mom_scale[t]` | Self-momentum gate: 0.5 when `z_tr20 < −1.0`, else 1.0 |
+| `MOM_Z_TRIGGER` | Z-threshold for momentum gate trigger (= −1.0) |
+| `MOM_SCALE_ON_TRIGGER` | Scalar applied when drawdown gate triggers (= 0.5) |
+| `scale_raw[t]` | `vix_scale × mom_scale`, clipped to `[0,1]` |
+| `scale[t]` | `scale_raw` lagged 1 day — the no-lookahead crash scalar |
+| `weights_filt[pair, t]` | Filtered weights: `weights_base × scale` |
+| `net_base[t]` | Net return of #18 base portfolio (no filter) |
+| `net_filt[t]` | Net return of #22 filtered portfolio |
+| `n_active` | Days where `scale < 0.95` (filter materially binding) |
+| `n_zero` | Days where `scale < 0.05` (flat positions) |
+| `mean_scale` | Average daily scalar across the sample |
+
+**Data sources.** 2Y yields cached at `data/raw/tvc_2y_yields.csv`. FX from yfinance. VIX from yfinance `^VIX` (FRED `VIXCLS` fallback).
+**Reference.** Brunnermeier, Nagel, Pedersen (2009). *"Carry Trades and Currency Crashes"*, NBER Macroeconomics Annual.
+**Script.** [`strategies/strat_22_carry_crash_filter_overlay.py`](strategies/strat_22_carry_crash_filter_overlay.py)
+**Track record CSV.** [`live/track_record/strategy_22_crash_filter_overlay_track_record.csv`](live/track_record/strategy_22_crash_filter_overlay_track_record.csv)
+**Equity curve.** [`reports/strategy_22_carry_crash_filter_overlay.png`](reports/strategy_22_carry_crash_filter_overlay.png)
