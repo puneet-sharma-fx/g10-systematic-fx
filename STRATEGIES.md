@@ -68,6 +68,7 @@ The original core finding was that **the change in 2Y rate differential predicts
 | **17** ⚠ | Oil (WTI) → next-day USDCAD (timing artefact) | 3.96 → ⚠ | Verified by #19: collapses to −0.84 with 1-day extra lag. Captures intraday WTI-USDCAD response in Yahoo close-time gap. Not tradable real-time. |
 | **19** ✓ | Oil → USDCAD with 1-day lag (rigour check) | −0.84 | Verification of #17 — confirms it was timing artefact. Signal correlation collapses from −0.16 to ~0. |
 | **21** ✓ | EURUSD rate-diff with 1-day lag (rigour check) | −0.58 | **The most important verification in the repo.** Confirms #1's edge was timing artefact; entire rate-diff family flagged. Signal corr collapses from +0.27 to +0.028. |
+| **23** ❌ | Donchian/ATR breakout with trailing stop (core4, 60d/1.5 ATR/2.5 ATR) | −0.18 | **Third independent confirmation of TA-in-FX dead** (after #11 momentum and the 15-indicator tech sweep). 23 trades over 15 years, 34.8% win rate, profit factor 0.60. Daily skew −2.13 (single-day stop hits dominate). EURUSD alone profitable (4 trades, PF 7.84); GBPUSD chopped (PF 0.16). NOT a timing artefact — uses only FX OHLC. Consistent with Park-Irwin 2007. |
 
 ## 🔬 Supporting analyses (diagnostics & rigour checks)
 
@@ -198,3 +199,48 @@ Net Sharpe **0.07**, annual return **+0.44%**, max DD **−20.85%**, monthly ske
 **Script.** [`strategies/strat_22_carry_crash_filter_overlay.py`](strategies/strat_22_carry_crash_filter_overlay.py)
 **Track record CSV.** [`live/track_record/strategy_22_crash_filter_overlay_track_record.csv`](live/track_record/strategy_22_crash_filter_overlay_track_record.csv)
 **Equity curve.** [`reports/strategy_22_carry_crash_filter_overlay.png`](reports/strategy_22_carry_crash_filter_overlay.png)
+
+---
+
+## Strategy #23 — Donchian/ATR breakout with trailing stop (G10 core4, REJECTED)
+
+**Explanation.** Classic trend-following breakout: enter LONG when today's close breaks a `DONCHIAN_LOOKBACK`-day resistance by `BREAKOUT_ATR_MULT × ATR`, enter SHORT on the symmetric downside break. While in a position, ratchet a trailing stop at `TRAIL_STOP_ATR_MULT × ATR` from close (raises only for longs, lowers only for shorts). Exit when the close crosses the stop. One position at a time per pair, full ±1/N sizing while active (max gross exposure = 100% when all 4 pairs simultaneously in trade), 1-day execution lag on signals. ATR is the canonical 14-day simple rolling mean of true range. **Critically, this strategy uses ONLY FX OHLC** (no rates, no VIX, no positioning data) — so its result is genuine price-pattern predictive content, structurally immune to the intraday timing-leakage artefact that flagged the rate-diff family in Strategy #21. Parameters chosen per the canonical trend-follower playbook and user spec (60-day resistance ≈ "tested 2-3 times per year"; 1.5 ATR breakout buffer to filter whipsaws; 2.5 ATR trailing stop wide enough to let trends run for weeks).
+
+**Result** (2010–2024, daily close-to-close, net of 5 pips RT cost): **rejected**. Net Sharpe **−0.18**, ann return **−0.27%**, MaxDD **−6.94%**, Calmar **−0.04**, daily skew **−2.13**. Total trades **23** over 15 years (0.37 per pair per year — too few to be statistically meaningful), of which 8 long and 15 short. Trade-level win rate **34.8%**, profit factor **0.60** (a losing strategy). Per-pair: EURUSD 75% win on 4 trades (PF 7.84) saves face for that pair alone; GBPUSD 20% win on 10 trades (PF 0.16) destroys everything; AUDUSD PF 0.06; USDCAD PF 1.01. The daily-return skew of **−2.13** is the textbook "stop-loss in volatile single day" signature — a breakout strategy is *supposed* to have positive skew (small losses, big wins) but the wide ATR trailing stop allows the close-to-stop adverse moves to dominate the loss distribution. Confirms what the literature has been saying for two decades: **Park & Irwin (2007)** — *"Technical Analysis in Foreign Exchange Markets: Is There Still Profitability?"* found TA-in-FX profitability gone post-1990s. This is now the **third independent confirmation** in this repo (after Strategy #11 cross-sectional momentum, Sharpe −0.34, and the 15-indicator technical sweep that produced 41/45 negative net Sharpes). FX in 2010–2024 is too mean-reverting at multi-month horizons for breakout signals to extract a positive net edge.
+
+**Variables (code-level glossary).**
+
+| Variable | Meaning (5–10 words) |
+|---|---|
+| `high[t]`, `low[t]`, `close[t]` | Daily yfinance OHLC for each pair |
+| `prev_close[t]` | Yesterday's close (used in true-range calc) |
+| `tr[t]` | True range: `max(H−L, |H−prev_close|, |L−prev_close|)` |
+| `atr[t]` | `ATR_PERIOD`-day simple mean of `tr` |
+| `ATR_PERIOD` | True-range averaging window (= 14 days, canonical) |
+| `resistance[t]` | `DONCHIAN_LOOKBACK`-day rolling max of close, shifted 1d |
+| `support[t]` | `DONCHIAN_LOOKBACK`-day rolling min of close, shifted 1d |
+| `DONCHIAN_LOOKBACK` | Resistance/support window (= 60 days, "2-3 peaks per year") |
+| `BREAKOUT_ATR_MULT` | Required overshoot above resistance to enter (= 1.5 × ATR) |
+| `TRAIL_STOP_ATR_MULT` | Trailing stop distance from close (= 2.5 × ATR) |
+| `position[pair, t]` | Per-pair state: +1 long, −1 short, 0 flat |
+| `stop[pair, t]` | Current trailing-stop level (raised only for longs) |
+| `entry_close[pair]` | Close price when the active trade was opened |
+| `weights[pair, t]` | Per-pair portfolio weight: `position / N_pairs` |
+| `weights_lag[pair, t]` | `weights.shift(1)` — what we actually hold today |
+| `turnover[pair, t]` | `|weights_lag.diff()|` — drives cost |
+| `cost_per_pair[pair, t]` | `turnover × (2.5 pips × pip_size) / close` |
+| `gross_port[t]` | Sum across pairs of `weights_lag × fx_return` |
+| `net_port[t]` | `gross_port − cost_total` |
+| `n_trades_per_pair` | Completed-trade count per pair |
+| `n_long`, `n_short` | Long-side vs short-side trade counts |
+| `win_rate` | Fraction of closed trades with `pnl_pct > 0` |
+| `profit_factor` | `Σ winning pnl / |Σ losing pnl|` |
+| `avg_duration_days` | Mean calendar-day holding period per trade |
+| `time_in_market[pair]` | Fraction of days `|position| > 0` per pair |
+
+**Data sources.** yfinance daily OHLC (`EURUSD=X`, `GBPUSD=X`, `AUDUSD=X`, `USDCAD=X`).
+**Reference.** Park, C.-H. & Irwin, S. (2007). *"What Do We Know About the Profitability of Technical Analysis?"*, Journal of Economic Surveys 21(4). Also Dennis-Eckhardt "Turtle Trading" 1984 (informal source for the breakout-with-trailing-stop archetype).
+**Script.** [`strategies/strat_23_atr_breakout_trailing_stop.py`](strategies/strat_23_atr_breakout_trailing_stop.py)
+**Track record CSV.** [`live/track_record/strategy_23_atr_breakout_track_record.csv`](live/track_record/strategy_23_atr_breakout_track_record.csv)
+**Trade log CSV.** [`live/track_record/strategy_23_atr_breakout_track_record_trades.csv`](live/track_record/strategy_23_atr_breakout_track_record_trades.csv)
+**Equity curve.** [`reports/strategy_23_atr_breakout_trailing_stop.png`](reports/strategy_23_atr_breakout_trailing_stop.png)

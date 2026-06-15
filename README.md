@@ -86,6 +86,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | 20 ⚠ | Classical vol-normalised carry (LEVEL signal, Dupuy 2021 spec) | 0.07 |
 | **21** ✓ | **EURUSD rate-diff with 1-day extra lag (rigour check of #1 — the big finding)** | **−0.58** |
 | **22** 🛡️ | **Carry crash filter overlay (VIX + self-momentum) on #18** — Brunnermeier 2009 | **Sharpe flat (2.90→2.91), vol −17%, MaxDD −7%** |
+| **23** ❌ | Donchian/ATR breakout with trailing stop (core4, 60d/1.5 ATR/2.5 ATR) — TA-in-FX dead (Park-Irwin 2007) | **−0.18** |
 
 ---
 
