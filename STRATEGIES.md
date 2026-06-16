@@ -52,6 +52,7 @@ The original core finding was that **the change in 2Y rate differential predicts
 | # | Strategy | Period | Net Sharpe | Notes |
 |---|---|---|---|---|
 | **4** | NZDUSD rate-diff | 2016-2024 | 0.92 | NZ data starts 2016, shorter sample |
+| **25** | Turtle System 1 (no filter) on commodities + crypto (8 instruments, vol-targeted) | 2010-2024 | **0.43** | **Profit factor 1.36, daily skew +0.82.** Same code as #24b but cross-asset shift to its native habitat. BTC alone PF 2.93, ETH PF 2.49 (max win +300%). Long avg +2.70% vs short avg −0.67% — long side carries the edge. Validates implementation; isolates FX rejection to that asset class. |
 | **20** | Classical vol-normalised carry (Dupuy 2021 spec, monthly) | 2010-2024 | 0.07 | Confirms post-2008 carry decay; LEVEL signal nearly dead in this era |
 
 ## ❌ Failed / rejected / inconclusive
@@ -297,3 +298,44 @@ Net Sharpe **0.07**, annual return **+0.44%**, max DD **−20.85%**, monthly ske
 **Equity curves.**
 - [`reports/strategy_24_turtle_system1_filter_on.png`](reports/strategy_24_turtle_system1_filter_on.png)
 - [`reports/strategy_24_turtle_system1_filter_off.png`](reports/strategy_24_turtle_system1_filter_off.png)
+
+---
+
+## Strategy #25 — Turtle System 1 on commodities + crypto (the right asset class)
+
+**Explanation.** The honest cross-asset test of Strategy #24b's implementation. Same code, same parameters (20-day breakout entry, 10-day reversion exit, 2N fixed hard stop, no filter), shifted to the asset universe the literature has always pointed to: commodities and crypto. Eight instruments via yfinance — Gold (`GC=F`), Silver (`SI=F`), Copper (`HG=F`), WTI Crude (`CL=F`), Natural Gas (`NG=F`), Soybeans (`ZS=F`), Bitcoin (`BTC-USD`), Ethereum (`ETH-USD`). BTC enters the universe from 2014-09 and ETH from 2017-11; positions are only opened on dates with data. Position sizing is **inverse-vol weighted** (`weight = position × TARGET_INSTR_VOL / realised_vol`, capped ±30%) so BTC's 70% annualised vol doesn't dominate Gold's 12% vol. Per-instrument vol target is 5%, which with 8 active instruments and modest correlations puts portfolio vol in the 12–15% range. Cost model is 10 bps round-trip per leg (= 5 bps per unit of turnover) — slightly conservative for liquid futures, fair for retail crypto. Two-decade question this answers: **is the #24b FX rejection a coding bug or a real asset-class limitation?** If our implementation is correct, this run should produce a positive Sharpe.
+
+**Result** (2010–2024, daily, net of 10 bps RT per leg): **net Sharpe +0.43, profit factor 1.36, daily skew +0.82** — the proper trend-follower signature (small frequent losses, occasional huge wins). Annualised return **+6.29%**, ann vol **14.63%**, max DD **−35.14%**, Calmar **0.18**. 1,217 trades over 15 years (~9.8 per instrument per year), 35.5% trade win rate. The strategy is in-market 94% of days on average — actively trading the entire sample. Long average PnL +2.70% vs short average PnL −0.67%: the edge is overwhelmingly on the **long side**, consistent with the 2017 and 2020–21 commodity supercycle and crypto bull markets. Per-instrument: **BTC alone profit factor 2.93** (43.3% win, avg win +31.06%, max win +231%); **ETH profit factor 2.49** (avg win +33.66%, max win **+300.37%** on a single trade). Commodities are marginal — Gold PF 0.96, Silver 1.02, Copper 0.70, Oil 1.14, NatGas 0.81, Soybean 1.04 — the crypto allocation does most of the lifting. Cumulative cost drag over 15 years is 28% (the gross-to-net Sharpe gap, 0.55 → 0.43, is meaningful). The result **validates the implementation**: identical code produces Sharpe +0.43 with PF 1.36 and skew +0.82 on the right asset class versus Sharpe −0.28 with PF 0.87 and skew −0.17 on G10 FX. The classical Dennis-Eckhardt parameters work in their native habitat (commodities + crypto) and fail outside it (FX) — exactly as Faith (2007) and Covel (2017) describe.
+
+**Variables (code-level glossary).**
+
+| Variable | Meaning (5–10 words) |
+|---|---|
+| `atr[instr, t]` | 20-day mean of true range per instrument |
+| `entry_high[instr, t]` | 20-day rolling max of close, shifted 1d |
+| `entry_low[instr, t]` | 20-day rolling min of close, shifted 1d |
+| `exit_high[instr, t]` | 10-day rolling max of close, shifted 1d |
+| `exit_low[instr, t]` | 10-day rolling min of close, shifted 1d |
+| `position[instr, t]` | +1 long, −1 short, 0 flat per instrument |
+| `stop_level[instr]` | Fixed 2N stop set at entry (does not trail) |
+| `realised_vol[instr, t]` | 21-day rolling annualised stdev of pct change |
+| `TARGET_INSTR_VOL` | Per-instrument volatility target (= 5%) |
+| `MAX_INSTR_WEIGHT` | Per-instrument absolute weight cap (= 30%) |
+| `weights[instr, t]` | `position × TARGET_INSTR_VOL / realised_vol`, capped |
+| `weights_lag[instr, t]` | `weights.shift(1)` — what we actually hold today |
+| `data_avail[instr, t]` | True if instrument had data by date t (handles BTC/ETH late start) |
+| `COST_RT_BPS` | Round-trip cost per leg in bps (= 10) |
+| `cost_per_unit` | Half of round-trip / 10000 = 5 bps per unit of turnover |
+| `turnover[instr, t]` | `|weights_lag.diff()|` per instrument |
+| `cost_total[t]` | Sum across instruments of `turnover × cost_per_unit` |
+| `gross_port[t]` | Sum across instruments of `weights_lag × pct_change(close)` |
+| `net_port[t]` | `gross_port − cost_total` |
+| `exit_reason` | Either "stop" (hard stop hit) or "reversion" (10d exit) |
+| `pnl_pct` | Trade-level PnL: `(exit − entry)/entry` (sign-adjusted) |
+
+**Data sources.** yfinance continuous futures (`GC=F`, `SI=F`, `HG=F`, `CL=F`, `NG=F`, `ZS=F`) and spot crypto (`BTC-USD`, `ETH-USD`).
+**Reference.** Faith, Curtis (2007). *"Way of the Turtle"*, McGraw-Hill. Covel, Michael (2017). *"The Complete TurtleTrader"*. The historical record of Dennis-Eckhardt 1984–1988 Turtle Trading on commodities/futures.
+**Script.** [`strategies/strat_25_turtle_commodities_crypto.py`](strategies/strat_25_turtle_commodities_crypto.py)
+**Track record CSV.** [`live/track_record/strategy_25_turtle_commodities_crypto_track_record.csv`](live/track_record/strategy_25_turtle_commodities_crypto_track_record.csv)
+**Trade log CSV.** [`live/track_record/strategy_25_turtle_commodities_crypto_track_record_trades.csv`](live/track_record/strategy_25_turtle_commodities_crypto_track_record_trades.csv)
+**Equity curve.** [`reports/strategy_25_turtle_commodities_crypto.png`](reports/strategy_25_turtle_commodities_crypto.png)

@@ -89,6 +89,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | **23** ❌ | Donchian/ATR breakout with trailing stop (core4, 60d/1.5 ATR/2.5 ATR) — TA-in-FX dead (Park-Irwin 2007) | **−0.18** |
 | **24a** ❌ | Classic Turtle Trading System 1 with last-loser filter (20d/10d/2N) — **filter dead-lock**, only 7 trades / 15y | **−0.01** (~flat) |
 | **24b** ❌ | Turtle System 1 without filter (pure 20d/10d/2N) — whipsaw graveyard, 689 trades, PF 0.87 | **−0.28** |
+| **25** ✓ | **Turtle System 1 on commodities + crypto** (Gold, Silver, Copper, Oil, NatGas, Soy, BTC, ETH) — validates implementation, isolates FX rejection to asset class | **+0.43** (PF 1.36, skew +0.82) |
 
 ---
 
