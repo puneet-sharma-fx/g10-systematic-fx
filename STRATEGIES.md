@@ -339,3 +339,38 @@ Net Sharpe **0.07**, annual return **+0.44%**, max DD **−20.85%**, monthly ske
 **Track record CSV.** [`live/track_record/strategy_25_turtle_commodities_crypto_track_record.csv`](live/track_record/strategy_25_turtle_commodities_crypto_track_record.csv)
 **Trade log CSV.** [`live/track_record/strategy_25_turtle_commodities_crypto_track_record_trades.csv`](live/track_record/strategy_25_turtle_commodities_crypto_track_record_trades.csv)
 **Equity curve.** [`reports/strategy_25_turtle_commodities_crypto.png`](reports/strategy_25_turtle_commodities_crypto.png)
+
+### #25 sub-period stability — the most important caveat on this strategy
+
+The full-sample Sharpe +0.43 hides material regime concentration. Annualised net Sharpe by macro regime:
+
+| Regime | Days | Sharpe | Ann Ret | Ann Vol | MaxDD | Skew | #Trades | Win % | PF |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| ZIRP 2010-15 | 1564 | **+0.31** | +4.07% | 13.1% | −18.4% | +0.14 | 421 | 36.3% | 1.07 |
+| Divergence 2016-19 | 1043 | **+0.41** | +5.64% | 13.6% | −17.0% | +0.50 | 351 | 34.5% | 1.64 |
+| **COVID 2020-21** | 523 | **+1.81** | **+34.58%** | 19.1% | −9.4% | **+2.19** | 169 | 41.4% | **2.65** |
+| **Hiking 2022-24** | 782 | **−0.48** | **−7.33%** | 15.3% | **−35.1%** | −0.06 | 276 | 31.9% | 0.77 |
+| **Full 2010-24** | 3912 | **+0.43** | +6.29% | 14.6% | −35.1% | +0.82 | 1217 | 35.5% | 1.36 |
+
+**Per-instrument Sharpe by regime** (gross of cost, isolates which instruments drove which periods):
+
+| Instrument | ZIRP | Divergence | COVID | Hiking | FULL |
+|---|---:|---:|---:|---:|---:|
+| Gold | +0.12 | +0.09 | −0.62 | +0.09 | −0.00 |
+| Silver | +0.74 | −0.22 | −0.02 | −0.69 | +0.11 |
+| Copper | −0.03 | −0.58 | +0.45 | −0.88 | −0.27 |
+| WTI Crude | +0.16 | +0.26 | **+1.33** | −0.62 | +0.32 |
+| Natural Gas | +0.02 | −0.59 | +0.37 | −0.07 | −0.11 |
+| Soybeans | −0.22 | −0.19 | +0.88 | +0.42 | +0.07 |
+| **BTC** | **+0.68** | **+1.39** | **+1.53** | **+0.36** | **+0.96** |
+| ETH | — | +0.68 | **+1.55** | −0.06 | +0.47 |
+
+**Findings.**
+- **3 of 4 regimes positive** — the strategy is mostly regime-stable, BUT the most recent regime (Hiking 2022-24) is negative and contains the full-sample worst drawdown (−35.1%). 2022-24 was where the entire MaxDD happened.
+- **COVID 2020-21 contributes disproportionately** to the headline Sharpe — +1.81 over 2 years drives most of the cumulative wealth in the full sample. ZIRP and Divergence are modestly positive but not enough alone to justify deployment.
+- **BTC is the only instrument with positive Sharpe in every regime** — without crypto, the commodities-only result would be marginal-to-negative. The strategy is really a **crypto trend-follower with a commodity overlay**, not a "commodity trend-follower with crypto exposure."
+- **Gold full-sample Sharpe is essentially zero** (−0.00) despite gold's famous trend-following reputation. Within commodities, only WTI (+0.32) and Soybeans (+0.07) carry positive full-sample edge.
+- **The honest deployability question:** what makes 2025+ different from 2022-24? Anyone trading this today must have a thesis on why the recent regime won't continue.
+
+**Script.** [`notebooks/subperiod_stability_strat25.py`](notebooks/subperiod_stability_strat25.py)
+**Chart.** [`reports/subperiod_stability_strat25.png`](reports/subperiod_stability_strat25.png)
