@@ -90,6 +90,8 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | **24a** ❌ | Classic Turtle Trading System 1 with last-loser filter (20d/10d/2N) — **filter dead-lock**, only 7 trades / 15y | **−0.01** (~flat) |
 | **24b** ❌ | Turtle System 1 without filter (pure 20d/10d/2N) — whipsaw graveyard, 689 trades, PF 0.87 | **−0.28** |
 | **25** ✓ | **Turtle System 1 on commodities + crypto** (Gold, Silver, Copper, Oil, NatGas, Soy, BTC, ETH) — validates implementation, isolates FX rejection to asset class | **+0.43** (PF 1.36, skew +0.82) |
+| **26a** ❌ | Carry-TSMOM filter overlay on #20 (soft, scale 0.5 when 12m carry < 0) | 0.01 (IR −0.18) |
+| **26b** ❌ | Carry-TSMOM filter overlay on #20 (hard, scale 0.0 when 12m carry < 0) | −0.06 (IR −0.18) |
 
 ---
 

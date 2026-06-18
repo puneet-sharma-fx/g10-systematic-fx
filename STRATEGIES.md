@@ -72,6 +72,8 @@ The original core finding was that **the change in 2Y rate differential predicts
 | **23** ❌ | Donchian/ATR breakout with trailing stop (core4, 60d/1.5 ATR/2.5 ATR) | −0.18 | **Third independent confirmation of TA-in-FX dead** (after #11 momentum and the 15-indicator tech sweep). 23 trades over 15 years, 34.8% win rate, profit factor 0.60. Daily skew −2.13 (single-day stop hits dominate). EURUSD alone profitable (4 trades, PF 7.84); GBPUSD chopped (PF 0.16). NOT a timing artefact — uses only FX OHLC. Consistent with Park-Irwin 2007. |
 | **24a** ❌ | Canonical Turtle System 1 (20d entry / 10d exit / 2N stop / last-loser filter) | −0.01 | **Filter dead-lock pathology.** Only 7 trades over 15 years (filter froze the strategy after each winner). 57% win rate, profit factor 1.02. Avg gross exposure 0.6% — strategy is essentially "do nothing." |
 | **24b** ❌ | Turtle System 1 without filter (pure 20d/10d/2N) | −0.28 | **Whipsaw graveyard.** 689 trades over 15 years (11/pair/year), 34.7% win rate, profit factor 0.87. Active losses from chop, MaxDD −28.5%. Confirms classical Turtle parameters do not extract edge from G10 FX. |
+| **26a** ❌ | Carry-TSMOM filter overlay on #20 (12m lookback, soft scale 0.5) | 0.01 (vs base 0.07) | **Rejected.** IR −0.18, vol −1.1pp, MaxDD −2.1pp, skew −0.16. The Moskowitz-Ooi-Pedersen TSMOM rescue requires base trend-following content in P&L path; #20 has Sharpe 0.07 so trailing-12m sign is noise. Filter activates 52.5% of months but destroys rather than adds value. |
+| **26b** ❌ | Carry-TSMOM filter overlay on #20 (12m lookback, hard scale 0.0) | −0.06 (vs base 0.07) | **Rejected.** Same IR −0.18 as soft variant; goes fully flat 52.5% of months. Hit rate collapses 52% → 22% (no return earned during off-months). Same conclusion: post-2008 carry decay isn't fixable by simple TSMOM. |
 
 ## 🔬 Supporting analyses (diagnostics & rigour checks)
 
@@ -374,3 +376,43 @@ The full-sample Sharpe +0.43 hides material regime concentration. Annualised net
 
 **Script.** [`notebooks/subperiod_stability_strat25.py`](notebooks/subperiod_stability_strat25.py)
 **Chart.** [`reports/subperiod_stability_strat25.png`](reports/subperiod_stability_strat25.png)
+
+---
+
+## Strategy #26 — Carry-TSMOM filter overlay on #20 (REJECTED both variants)
+
+**Explanation.** Implements the highest-priority signal from the v2 FX research doc — Moskowitz-Ooi-Pedersen (2012, JFE) time-series momentum applied to the carry FACTOR RETURN itself, not to the underlying FX spot. The hypothesis: carry-trade unwinds (2008, 2015 CNY scare, 2020 COVID, 2022 BoJ pivot, Aug-2024 yen carry blow-up) are persistent — once the carry factor starts losing, it keeps losing for months as carry investors forcibly deleverage. A TSMOM filter on the carry return should catch the regime change and scale positions down. Per the canonical MOP 2012 spec: compute `trailing_12m_carry_return`, scale positions at 1.0 when trailing return is positive and at 0.5 (soft) or 0.0 (hard) when negative, lag 1 month to avoid look-ahead, multiply into the existing base weights. Two variants run in the same module — #26a (soft, scale 0.5 when off) and #26b (hard, scale 0.0 when off). Base strategy: #20 (classical vol-normalised carry, monthly rebalance) which has full-sample net Sharpe 0.07. Cost recomputed from the new turnover that scale changes induce (e.g., scale 1.0 → 0.5 generates |Δw|=0.5 across all 7 pairs even when no signal changes).
+
+**Result** (2010–2024, monthly, net of 5 pips RT cost): **both variants REJECTED**. #26a soft: Sharpe **0.01** (vs base 0.07), Ann return +0.07% (vs +0.44%), Max DD −18.73% (vs −20.85%), monthly skew **−0.23** (vs −0.07), tracking error 2.06%, **information ratio −0.18**. #26b hard: Sharpe **−0.06**, Ann return −0.31%, Max DD −17.20%, monthly skew **−0.27**, tracking error 4.13%, **information ratio −0.18**, hit rate collapses from 52% to 22% (no return earned during the 52.5% of months the filter forces flat). The filter activates 52.5% of months — substantial intervention — but destroys rather than adds value. The interpretation: **the MOP TSMOM rescue requires the base strategy to have genuine trend-following content in its P&L path**. #20's classical level-carry has Sharpe 0.07 — its base return is essentially noise about a near-zero mean. The trailing-12m sign of a noise series is itself noise, so the filter is gating on no real signal. Skewness gets *worse* (−0.07 → −0.23/−0.27) because the filter removes some good months alongside the bad ones. The Hurst-Ooi-Pedersen (2017, JPM) "Century of Evidence on Trend-Following" finding holds for the 1880s–2000s sample they studied; the post-2010 era's carry decay leaves no trend to filter. Net learning: post-2008 G10 carry isn't fixable by simple TSMOM regime conditioning. This is a clean independent confirmation that #20's Sharpe 0.07 isn't a regime-conditioning oversight — the signal is genuinely dead in this era.
+
+**Variables (code-level glossary).**
+
+| Variable | Meaning (5–10 words) |
+|---|---|
+| `base[monthly]` | #20's monthly-rebalanced track record loaded from CSV |
+| `trailing_12m[t]` | Rolling 12-month sum of `base.net_return` |
+| `TSMOM_LOOKBACK_MONTHS` | TSMOM lookback in months (= 12, canonical MOP 2012) |
+| `scale_raw[t]` | `1.0` if `trailing_12m[t] > 0` else `scale_when_negative` |
+| `scale_when_negative` | Tunable: 0.5 (soft #26a) or 0.0 (hard #26b) |
+| `scale[t]` | `scale_raw.shift(1)` — applied to next month, no look-ahead |
+| `weights_old[pair, t]` | #20's original monthly weights (from base CSV) |
+| `weights_new[pair, t]` | `weights_old × scale` — filtered weights |
+| `gross_old[t]` | #20's monthly gross return |
+| `gross_new[t]` | `gross_old × scale` — filtered gross return (linear scaling) |
+| `new_turnover[t]` | `|weights_new.diff()|.sum(axis=1)` — monthly turnover after filter |
+| `new_cost[t]` | `new_turnover × 2.27 bps` (approximate uniform half-spread/spot) |
+| `net_new[t]` | `gross_new − new_cost` — filtered net return |
+| `tracking_err` | Annualised stdev of `(net_new − base_net)` — overlay drift |
+| `ir` | Information ratio: active return / tracking error |
+| `n_filter_active` | Months where `scale < 1.0` |
+| `n_filter_off` | Months where `scale == 0.0` (only relevant for #26b) |
+| `mean_scale` | Average daily scalar across the sample |
+
+**Data sources.** Reuses #20's monthly track record (no new data); cost approximated via 2.27 bps half-spread applicable across all 7 pairs at typical spot.
+**Reference.** Moskowitz, Ooi & Pedersen (2012). *"Time Series Momentum"*, JFE 104(2). Hurst, Ooi & Pedersen (2017). *"A Century of Evidence on Trend-Following Investing"*, J. of Portfolio Management 44(1). v2 research doc Section 1 "Carry-TSMOM Filter".
+**Script.** [`strategies/strat_26_carry_tsmom_filter.py`](strategies/strat_26_carry_tsmom_filter.py)
+**Track record CSVs.**
+- [`live/track_record/strategy_26a_carry_tsmom_filter_track_record.csv`](live/track_record/strategy_26a_carry_tsmom_filter_track_record.csv) (soft variant)
+- [`live/track_record/strategy_26b_carry_tsmom_filter_track_record.csv`](live/track_record/strategy_26b_carry_tsmom_filter_track_record.csv) (hard variant)
+
+**Equity curve.** [`reports/strategy_26_carry_tsmom_filter.png`](reports/strategy_26_carry_tsmom_filter.png)
