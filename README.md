@@ -92,6 +92,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | **25** ✓ | **Turtle System 1 on commodities + crypto** (Gold, Silver, Copper, Oil, NatGas, Soy, BTC, ETH) — validates implementation, isolates FX rejection to asset class | **+0.43** (PF 1.36, skew +0.82) |
 | **26a** ❌ | Carry-TSMOM filter overlay on #20 (soft, scale 0.5 when 12m carry < 0) | 0.01 (IR −0.18) |
 | **26b** ❌ | Carry-TSMOM filter overlay on #20 (hard, scale 0.0 when 12m carry < 0) | −0.06 (IR −0.18) |
+| **27** ❌ | 20/50 DMA crossover with 1 ATR stop below MA20 (core4 FX) — 5th TA-in-FX confirmation; least-bad of the family, PF 0.94, skew +0.17, 2:1 reward:risk per trade | **−0.09** |
 
 ---
 

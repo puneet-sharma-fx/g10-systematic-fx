@@ -74,6 +74,7 @@ The original core finding was that **the change in 2Y rate differential predicts
 | **24b** ❌ | Turtle System 1 without filter (pure 20d/10d/2N) | −0.28 | **Whipsaw graveyard.** 689 trades over 15 years (11/pair/year), 34.7% win rate, profit factor 0.87. Active losses from chop, MaxDD −28.5%. Confirms classical Turtle parameters do not extract edge from G10 FX. |
 | **26a** ❌ | Carry-TSMOM filter overlay on #20 (12m lookback, soft scale 0.5) | 0.01 (vs base 0.07) | **Rejected.** IR −0.18, vol −1.1pp, MaxDD −2.1pp, skew −0.16. The Moskowitz-Ooi-Pedersen TSMOM rescue requires base trend-following content in P&L path; #20 has Sharpe 0.07 so trailing-12m sign is noise. Filter activates 52.5% of months but destroys rather than adds value. |
 | **26b** ❌ | Carry-TSMOM filter overlay on #20 (12m lookback, hard scale 0.0) | −0.06 (vs base 0.07) | **Rejected.** Same IR −0.18 as soft variant; goes fully flat 52.5% of months. Hit rate collapses 52% → 22% (no return earned during off-months). Same conclusion: post-2008 carry decay isn't fixable by simple TSMOM. |
+| **27** ❌ | 20/50 DMA crossover with 1 ATR stop below MA20 (core4 FX) | −0.09 | **Rejected, but the LEAST BAD TA-in-FX result so far.** 351 trades, 31.6% win rate, profit factor 0.94, daily skew **+0.17** (proper trend-follower signature!). Avg win/loss ratio 2:1 (+2.35% / −1.16%). 5th independent TA-in-FX confirmation. Per-pair PF: GBPUSD 1.13, AUDUSD 1.12 (borderline), EURUSD 0.69, USDCAD 0.80. Almost works on cost — 4.05% cumulative cost drag is the main hurdle. |
 
 ## 🔬 Supporting analyses (diagnostics & rigour checks)
 
@@ -416,3 +417,44 @@ The full-sample Sharpe +0.43 hides material regime concentration. Annualised net
 - [`live/track_record/strategy_26b_carry_tsmom_filter_track_record.csv`](live/track_record/strategy_26b_carry_tsmom_filter_track_record.csv) (hard variant)
 
 **Equity curve.** [`reports/strategy_26_carry_tsmom_filter.png`](reports/strategy_26_carry_tsmom_filter.png)
+
+---
+
+## Strategy #27 — 20/50 DMA crossover with 1 ATR stop (REJECTED, but the least-bad TA-in-FX result)
+
+**Explanation.** The most textbook trend-following spec there is: enter LONG when 20-day SMA crosses above 50-day SMA ("golden cross"), enter SHORT on the symmetric "death cross". While in a position, the stop level is recomputed daily as `ma20 ± 1 × ATR(14)` (below MA20 for longs, above for shorts) — non-ratchet, moving with the 20-DMA each day as specified by the user. Exit on stop OR on opposite crossover (reversal triggers immediate exit + new opposite position on the same day). Universe: G10 core 4 (EURUSD, GBPUSD, AUDUSD, USDCAD), equal-weight ±1/N per active pair, max gross exposure 100%. The simplest moving-average system in trading — taught in every retail course, built into every charting package. The question this answers: does it survive 5 pips RT cost on G10 spot FX?
+
+**Result** (2010–2024, daily, net of 5 pips RT): **rejected, but the LEAST BAD TA-in-FX result tested so far**. Net Sharpe **−0.09**, ann return **−0.35%**, MaxDD **−12.91%**, Calmar **−0.03**, daily skew **+0.17** (the proper trend-follower signature, finally — small frequent losses, occasional bigger wins). Total **351 trades** (88-92 per pair), 176 long / 175 short (perfectly balanced), trade-level win rate **31.6%**, average win **+2.35%** vs average loss **−1.16%** (**2:1 reward-to-risk** at the trade level — structurally correct for trend-following). Average trade duration 31 days. Per-pair: **GBPUSD PF 1.13, AUDUSD PF 1.12** (both barely above breakeven), EURUSD PF 0.69, USDCAD PF 0.80. Exit decomposition: **341 of 351 trades exit on the ATR stop**, only 10 via opposite crossover reversal — the 1 ATR stop is tight relative to the time between MA crossovers, so the stop dominates. Avg gross exposure 50%. Compared to prior FX TA tests this is the "structurally healthy" rejection: #23 Donchian had daily skew −2.13 (broken shape); #24b Turtle had skew −0.17 and PF 0.87; **#27 has skew +0.17 and PF 0.94 — closest to working.** The honest read: the strategy is doing trend-following CORRECTLY, but in G10 FX 2010–2024 the 31.6% win rate × 2:1 reward ratio yields ~+0.27% per gross-of-cost trade — not enough to overcome 4.05% cumulative cost drag. This is the **5th independent confirmation of TA-in-FX dead** in this repo (after #11 momentum portfolio, the 15-indicator technical sweep, #23 Donchian, #24b Turtle), and the most structurally informative one because the trade-level metrics are nearly the right shape — there just isn't enough multi-week trend content in G10 spot FX to extract net edge.
+
+**Variables (code-level glossary).**
+
+| Variable | Meaning (5–10 words) |
+|---|---|
+| `high[t]`, `low[t]`, `close[t]` | Daily yfinance OHLC per pair |
+| `ma_fast[t]` | 20-day simple moving average of close |
+| `ma_slow[t]` | 50-day simple moving average of close |
+| `atr[t]` | 14-day mean of true range (canonical ATR) |
+| `FAST_MA_DAYS` | Fast MA window (= 20 days) |
+| `SLOW_MA_DAYS` | Slow MA window (= 50 days) |
+| `STOP_ATR_MULT` | Stop offset multiplier (= 1.0 × ATR) |
+| `diff[t]` | `ma_fast − ma_slow` — sign tracks current regime |
+| `golden_x[t]` | True only on day `diff` flips negative → positive |
+| `death_x[t]` | True only on day `diff` flips positive → negative |
+| `stop_level[t]` | `ma_fast ∓ STOP_ATR_MULT × atr` (recomputed daily, non-ratchet) |
+| `position[pair, t]` | +1 long, −1 short, 0 flat per pair |
+| `entry_close[pair]` | Close price when active trade was opened |
+| `weights[pair, t]` | Per-pair portfolio weight: `position / N_pairs` |
+| `weights_lag[pair, t]` | `weights.shift(1)` — what we actually hold today |
+| `turnover[pair, t]` | `|weights_lag.diff()|` — drives cost |
+| `exit_reason` | Either "stop" (close < stop_level) or "reversal" (opposite crossover) |
+| `n_stop_exits` | How many trades exited on the ATR stop |
+| `n_reversal_exits` | How many trades exited because the opposite crossover fired |
+| `pnl_pct` | Trade-level PnL: `(exit − entry)/entry` (sign-adjusted) |
+| `avg_long_pct`, `avg_short_pct` | Long-side and short-side average trade PnL |
+
+**Data sources.** yfinance daily OHLC (`EURUSD=X`, `GBPUSD=X`, `AUDUSD=X`, `USDCAD=X`).
+**Reference.** No single canonical paper — this is the most-taught retail TA system in existence. The "golden cross / death cross" framing dates to Charles Dow's editorials, ~1900. Most charting packages default to 50/200 or 20/50 SMA pairs. Park & Irwin (2007), JES 21(4) — the same reference cited for #23 and #24 — covers MA-crossover systems specifically as part of the "post-1990 TA-in-FX dead" body of evidence.
+**Script.** [`strategies/strat_27_ma_crossover_atr_stop.py`](strategies/strat_27_ma_crossover_atr_stop.py)
+**Track record CSV.** [`live/track_record/strategy_27_ma_crossover_atr_stop_track_record.csv`](live/track_record/strategy_27_ma_crossover_atr_stop_track_record.csv)
+**Trade log CSV.** [`live/track_record/strategy_27_ma_crossover_atr_stop_track_record_trades.csv`](live/track_record/strategy_27_ma_crossover_atr_stop_track_record_trades.csv)
+**Equity curve.** [`reports/strategy_27_ma_crossover_atr_stop.png`](reports/strategy_27_ma_crossover_atr_stop.png)
