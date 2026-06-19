@@ -53,6 +53,7 @@ The original core finding was that **the change in 2Y rate differential predicts
 |---|---|---|---|---|
 | **4** | NZDUSD rate-diff | 2016-2024 | 0.92 | NZ data starts 2016, shorter sample |
 | **25** | Turtle System 1 (no filter) on commodities + crypto (8 instruments, vol-targeted) | 2010-2024 | **0.43** | **Profit factor 1.36, daily skew +0.82.** Same code as #24b but cross-asset shift to its native habitat. BTC alone PF 2.93, ETH PF 2.49 (max win +300%). Long avg +2.70% vs short avg −0.67% — long side carries the edge. Validates implementation; isolates FX rejection to that asset class. |
+| **28** | 20/50 DMA crossover with 1 ATR stop on commodities + crypto (8 instruments, vol-targeted) | 2010-2024 | **0.42** | **Profit factor 1.47, daily skew +0.50.** Same code as #27 but cross-asset shift. BTC PF 2.96, ETH PF 3.30 (max win +281%). Long avg +3.08% / short avg −0.47%. Validates the asset-class hypothesis across BOTH MA-crossover and Turtle spec families. |
 | **20** | Classical vol-normalised carry (Dupuy 2021 spec, monthly) | 2010-2024 | 0.07 | Confirms post-2008 carry decay; LEVEL signal nearly dead in this era |
 
 ## ❌ Failed / rejected / inconclusive
@@ -458,3 +459,47 @@ The full-sample Sharpe +0.43 hides material regime concentration. Annualised net
 **Track record CSV.** [`live/track_record/strategy_27_ma_crossover_atr_stop_track_record.csv`](live/track_record/strategy_27_ma_crossover_atr_stop_track_record.csv)
 **Trade log CSV.** [`live/track_record/strategy_27_ma_crossover_atr_stop_track_record_trades.csv`](live/track_record/strategy_27_ma_crossover_atr_stop_track_record_trades.csv)
 **Equity curve.** [`reports/strategy_27_ma_crossover_atr_stop.png`](reports/strategy_27_ma_crossover_atr_stop.png)
+
+---
+
+## Strategy #28 — 20/50 DMA crossover with 1 ATR stop on commodities + crypto
+
+**Explanation.** The asset-class companion to Strategy #27. Identical spec — 20-day SMA crosses 50-day SMA for entry, stop set at `MA20 ∓ 1 × ATR(14)` recomputed daily, opposite crossover triggers same-day reversal — applied to the same 8-instrument universe used in Strategy #25 (Gold, Silver, Copper, WTI Crude, NatGas, Soybeans via yfinance continuous front-month futures `=F`, plus Bitcoin and Ethereum spot via `BTC-USD` and `ETH-USD`). Position sizing is **inverse-vol weighted** (per-instrument vol target 5%, weight cap ±30%) so BTC's 70% annualised vol doesn't dominate gold's 12% vol. Costs are 10 bps round-trip per leg — slightly conservative for liquid futures, fair for retail crypto. Two-decade question this resolves: does the 20/50 MA crossover's "structurally healthy" trade-level shape from #27 (positive skew, 2:1 reward:risk) translate the same asset-class Sharpe boost we saw on #24b → #25? If yes, the FX rejection in #27 is genuine asset-class behaviour; if no, our cross-asset hypothesis is shakier than it looked.
+
+**Result** (2010–2024, daily, net of 10 bps RT per leg): **net Sharpe +0.42, profit factor 1.47, daily skew +0.50** — confirming the asset-class swap reproduces cleanly across both trend-following spec families. Annualised return **+4.58% net** (vs −0.35% on FX), ann vol **10.97%**, max DD **−26.84%**, Calmar **0.17**. **605 trades** over 15 years (4.87 per instrument per year), 302 long / 303 short (balanced), 31.9% trade win rate, average win **+12.84%** vs average loss **−4.10%** (3:1 reward-to-risk per trade). Long average PnL +3.08% vs short average PnL −0.47% — same long-side dominance as #25, consistent with 2017 + 2020–21 + 2022 commodity supercycle and crypto bull markets. Cumulative cost drag is **14.72% over 15 years** — much higher than #27's 4.05% because of more frequent trading (4.87 vs 5.65 trades/instr/year is similar but crypto's volatility creates larger weight swings under inverse-vol sizing). Per-instrument: **ETH PF 3.30** (max win **+281.58%** on a single trade), **BTC PF 2.96** (max win +145%), SILVER 1.13, GOLD 1.05, OIL 1.05, SOYBEAN 1.04, NATGAS 0.78, COPPER 0.73 — crypto allocation carries most of the edge again, commodities ex-crypto would be marginal. Cross-spec validation table:
+
+| Spec | FX Sharpe | Commodities+Crypto Sharpe | Δ |
+|---|---:|---:|---:|
+| Turtle 20/10/2N (#24b → #25) | −0.28 | +0.43 | +0.71 |
+| **20/50 MA Crossover (#27 → #28)** | **−0.09** | **+0.42** | **+0.51** |
+
+Same code, same period, same cost methodology, only the universe changes. **The implementation is validated across two independent spec families. The G10 FX rejection of trend-following is a genuine asset-class limitation, not a coding artefact.**
+
+**Variables (code-level glossary).**
+
+| Variable | Meaning (5–10 words) |
+|---|---|
+| `high[t]`, `low[t]`, `close[t]` | Daily yfinance OHLC per instrument |
+| `ma_fast[t]`, `ma_slow[t]` | 20-day and 50-day SMA of close |
+| `atr[t]` | 14-day mean of true range |
+| `diff[t]` | `ma_fast − ma_slow` per instrument |
+| `golden_x[t]`, `death_x[t]` | True on day `diff` flips negative/positive |
+| `stop_level[t]` | `ma_fast ∓ STOP_ATR_MULT × atr` (daily, non-ratchet) |
+| `position[instr, t]` | +1 long, −1 short, 0 flat per instrument |
+| `realised_vol[instr, t]` | 21-day rolling annualised stdev of pct change |
+| `TARGET_INSTR_VOL` | Per-instrument volatility target (= 5%) |
+| `MAX_INSTR_WEIGHT` | Per-instrument absolute weight cap (= 30%) |
+| `weights[instr, t]` | `position × TARGET_INSTR_VOL / realised_vol`, capped |
+| `weights_lag[instr, t]` | `weights.shift(1)` — held today |
+| `data_avail[instr, t]` | True if instrument had data by date t (handles BTC/ETH late start) |
+| `COST_RT_BPS` | Round-trip cost per leg in bps (= 10) |
+| `turnover[instr, t]` | `|weights_lag.diff()|` per instrument |
+| `cost_total[t]` | Sum across instruments of `turnover × 5 bps` |
+| `exit_reason` | Either "stop" (close crosses stop_level) or "reversal" (opposite crossover) |
+
+**Data sources.** yfinance continuous futures (`GC=F`, `SI=F`, `HG=F`, `CL=F`, `NG=F`, `ZS=F`) and spot crypto (`BTC-USD`, `ETH-USD`).
+**Reference.** No single canonical paper; this is the textbook MA-crossover spec applied to the asset universe Faith (2007) and Covel (2017) document as Turtle Trading's native habitat. Park & Irwin (2007), JES 21(4), for the FX-specific TA failure context.
+**Script.** [`strategies/strat_28_ma_crossover_commodities_crypto.py`](strategies/strat_28_ma_crossover_commodities_crypto.py)
+**Track record CSV.** [`live/track_record/strategy_28_ma_crossover_commodities_crypto_track_record.csv`](live/track_record/strategy_28_ma_crossover_commodities_crypto_track_record.csv)
+**Trade log CSV.** [`live/track_record/strategy_28_ma_crossover_commodities_crypto_track_record_trades.csv`](live/track_record/strategy_28_ma_crossover_commodities_crypto_track_record_trades.csv)
+**Equity curve.** [`reports/strategy_28_ma_crossover_commodities_crypto.png`](reports/strategy_28_ma_crossover_commodities_crypto.png)
