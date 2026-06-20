@@ -503,3 +503,55 @@ Same code, same period, same cost methodology, only the universe changes. **The 
 **Track record CSV.** [`live/track_record/strategy_28_ma_crossover_commodities_crypto_track_record.csv`](live/track_record/strategy_28_ma_crossover_commodities_crypto_track_record.csv)
 **Trade log CSV.** [`live/track_record/strategy_28_ma_crossover_commodities_crypto_track_record_trades.csv`](live/track_record/strategy_28_ma_crossover_commodities_crypto_track_record_trades.csv)
 **Equity curve.** [`reports/strategy_28_ma_crossover_commodities_crypto.png`](reports/strategy_28_ma_crossover_commodities_crypto.png)
+
+### #28 sub-period stability — and the deployment-deciding comparison with #25
+
+Same regime windows used for #25 and the rate-diff family (ZIRP 2010-15, Divergence 2016-19, COVID 2020-21, Hiking 2022-24). Annualised net Sharpe by regime:
+
+| Regime | Days | Sharpe | Ann Ret | Ann Vol | MaxDD | Skew | #Trades | Win % | PF |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| ZIRP 2010-15 | 1564 | **+0.36** | +3.70% | 10.4% | −22.1% | +0.28 | 221 | 29.0% | 1.10 |
+| Divergence 2016-19 | 1043 | **+0.29** | +3.02% | 10.6% | −20.3% | +1.16 | 179 | 31.3% | 1.34 |
+| **COVID 2020-21** | 523 | **+1.10** | +13.25% | 12.0% | −8.5% | +0.38 | 75 | 40.0% | **3.15** |
+| **Hiking 2022-24** | 782 | **+0.22** | +2.64% | 11.9% | −26.8% | +0.22 | 130 | 33.1% | 1.11 |
+| **Full 2010-24** | 3912 | **+0.42** | +4.58% | 11.0% | −26.8% | +0.50 | 605 | 31.9% | 1.47 |
+
+**Positive Sharpe in ALL FOUR regimes** — including Hiking 2022-24, where #25 lost money. The maximum drawdown (−26.84%) still lives in the Hiking regime, but unlike #25 the strategy made positive net return over those three years.
+
+**Side-by-side vs Strategy #25 on the same universe** — this is the deployment-deciding table:
+
+| Regime | #25 Turtle 20/10/2N | #28 20/50 MA-Cross | Δ |
+|---|---:|---:|---:|
+| ZIRP 2010-15 | +0.31 | +0.36 | +0.05 |
+| Divergence 2016-19 | +0.41 | +0.29 | −0.12 |
+| **COVID 2020-21** | **+1.81** | +1.10 | **−0.71** (smaller boom) |
+| **Hiking 2022-24** | **−0.48** | **+0.22** | **+0.70** (rescued) |
+| **FULL SAMPLE** | **+0.43** | **+0.42** | −0.01 |
+
+The full-sample Sharpes are statistically indistinguishable (+0.43 vs +0.42), but **the regime distribution is materially different**:
+- **#25 is regime-concentrated** — COVID Sharpe +1.81 carries most of the cumulative wealth, but the strategy would have lost money over the 3 most recent years.
+- **#28 is regime-distributed** — smaller COVID boom (+1.10 instead of +1.81), but no regime loses money. Worst regime is Hiking at +0.22 vs #25's −0.48.
+
+For an actual deployment decision, **#28 is the clearly more attractive choice** despite the same full-sample number. A regime-stable Sharpe is much more valuable than a regime-concentrated one — particularly because the deployment-killing question we flagged on #25 ("what makes 2025+ different from 2022-24?") has a different answer here: #28 worked through 2022-24, so a 2025 deployment doesn't require a regime-change thesis.
+
+**Per-instrument annualised Sharpe by regime** (gross of cost):
+
+| Instrument | ZIRP | Divergence | COVID | Hiking | FULL |
+|---|---:|---:|---:|---:|---:|
+| Gold | +0.27 | +0.32 | −0.28 | −0.31 | +0.09 |
+| Silver | **+0.83** | +0.16 | −0.45 | −0.46 | +0.27 |
+| Copper | −0.13 | −0.27 | −0.07 | +0.10 | −0.11 |
+| WTI Crude | +0.21 | −0.13 | +0.60 | −0.24 | +0.09 |
+| Natural Gas | −0.17 | −0.76 | +0.78 | +0.23 | −0.08 |
+| Soybeans | −0.26 | −0.38 | +0.48 | **+0.75** | +0.01 |
+| **BTC** | **+0.44** | **+1.42** | **+0.96** | **+0.51** | **+0.84** |
+| ETH | — | +0.51 | **+1.28** | +0.09 | +0.39 |
+
+**Findings.**
+- **BTC is the workhorse on both strategies** — only instrument with positive Sharpe in every regime in both #25 AND #28. The diversification value of commodities is more about smoothing crypto's vol than about contributing edge.
+- **Commodities ex-crypto are individually marginal**: Gold +0.09, Copper −0.11, WTI +0.09, NatGas −0.08, Soybean +0.01. Only Silver (+0.27) carries meaningful standalone edge across the full sample, and only because of its very strong ZIRP-era number (+0.83 then weakly negative since).
+- **Soybeans Hiking-cycle result is the differentiator vs #25**: +0.75 here vs +0.42 on #25. Combined with Copper +0.10 and NatGas +0.23, the MA-crossover spec extracts modest positive edge from commodities in the recent regime where the Turtle spec couldn't.
+- **The portfolio works because inverse-vol sizing smooths the basket**, not because each instrument has individual edge. Without the BTC+ETH allocation the strategy would be marginal-to-flat.
+
+**Script.** [`notebooks/subperiod_stability_strat28.py`](notebooks/subperiod_stability_strat28.py)
+**Chart.** [`reports/subperiod_stability_strat28.png`](reports/subperiod_stability_strat28.png)
