@@ -94,6 +94,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | **26b** ❌ | Carry-TSMOM filter overlay on #20 (hard, scale 0.0 when 12m carry < 0) | −0.06 (IR −0.18) |
 | **27** ❌ | 20/50 DMA crossover with 1 ATR stop below MA20 (core4 FX) — 5th TA-in-FX confirmation; least-bad of the family, PF 0.94, skew +0.17, 2:1 reward:risk per trade | **−0.09** |
 | **28** ✓ | **20/50 DMA crossover with 1 ATR stop on commodities + crypto** — companion to #27 on the same #25 universe; validates asset-class hypothesis across 2 spec families | **+0.42** (PF 1.47, skew +0.50) |
+| **29** 🛡️ | **Crash filter overlay (VIX + self-momentum) on #28** — first overlay in the repo to materially ADD Sharpe; all metrics improve simultaneously | **+0.51** (MaxDD −7.7pp, IR +0.14) |
 
 ---
 

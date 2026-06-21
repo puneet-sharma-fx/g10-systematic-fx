@@ -54,6 +54,7 @@ The original core finding was that **the change in 2Y rate differential predicts
 | **4** | NZDUSD rate-diff | 2016-2024 | 0.92 | NZ data starts 2016, shorter sample |
 | **25** | Turtle System 1 (no filter) on commodities + crypto (8 instruments, vol-targeted) | 2010-2024 | **0.43** | **Profit factor 1.36, daily skew +0.82.** Same code as #24b but cross-asset shift to its native habitat. BTC alone PF 2.93, ETH PF 2.49 (max win +300%). Long avg +2.70% vs short avg −0.67% — long side carries the edge. Validates implementation; isolates FX rejection to that asset class. |
 | **28** | 20/50 DMA crossover with 1 ATR stop on commodities + crypto (8 instruments, vol-targeted) | 2010-2024 | **0.42** | **Profit factor 1.47, daily skew +0.50.** Same code as #27 but cross-asset shift. BTC PF 2.96, ETH PF 3.30 (max win +281%). Long avg +3.08% / short avg −0.47%. Validates the asset-class hypothesis across BOTH MA-crossover and Turtle spec families. |
+| **29** | Crash filter overlay (VIX + self-momentum) on #28 | 2010-2024 | **0.51** | **First overlay in the repo to materially add Sharpe.** All metrics improve simultaneously: Sortino 0.63 → 0.75, MaxDD −26.84% → −19.15% (−7.7pp), Calmar 0.17 → 0.26, skew +0.50 → +0.62, ann ret +4.58% → +5.00%. IR +0.14. Conditional Sharpe test: on the 1,455 binding days, base earns −0.08, filtered earns +0.09 — filter is removing bad days specifically. |
 | **20** | Classical vol-normalised carry (Dupuy 2021 spec, monthly) | 2010-2024 | 0.07 | Confirms post-2008 carry decay; LEVEL signal nearly dead in this era |
 
 ## ❌ Failed / rejected / inconclusive
@@ -555,3 +556,48 @@ For an actual deployment decision, **#28 is the clearly more attractive choice**
 
 **Script.** [`notebooks/subperiod_stability_strat28.py`](notebooks/subperiod_stability_strat28.py)
 **Chart.** [`reports/subperiod_stability_strat28.png`](reports/subperiod_stability_strat28.png)
+
+---
+
+## Strategy #29 — Crash filter overlay on #28 (first overlay to add Sharpe)
+
+**Explanation.** Takes the VIX + self-momentum crash scalar built for Strategy #22 (originally an overlay on the equal-weight rate-diff portfolio #18, which was later flagged as a timing artefact) and re-applies it without parameter retuning to a different base: Strategy #28, the 20/50 MA crossover on commodities + crypto. **The point of the test is that #28 is a genuine trend-following strategy** (not timing-artefact-suspect like #18), so this is the first time the overlay is being tested on a deployable base. Filter spec identical to #22: VIX scalar linear from 1.0 at VIX≤20 to 0.0 at VIX≥40; self-momentum scalar of 0.5 when the trailing-20d return of the unfiltered base is below −1σ of its trailing 252d, else 1.0; combined as `vix_scale × mom_scale`, clipped to [0, 1], lagged 1 day for no look-ahead, multiplied into the per-instrument weights of #28. Cost recomputed from new filtered turnover at the same 10 bps RT per leg as the base.
+
+**Result** (2010–2024, daily, net of 10 bps RT per leg): **the first overlay test in the repo that materially adds value across every metric**. Sharpe **0.42 → 0.51 (+0.09)**, Sortino **0.63 → 0.75 (+0.11)**, ann return **+4.58% → +5.00% (+0.42pp)**, ann vol **10.97% → 9.81% (−1.16pp)**, max DD **−26.84% → −19.15% (+7.69pp)**, Calmar **0.17 → 0.26 (+0.09)**, daily skew **+0.50 → +0.62 (+0.12)**. Cumulative wealth +16pp over the base over 15 years. Overlay diagnostics: tracking error 3.02% annualised, **information ratio +0.14** (positive — the overlay adds active value), cost of insurance +10.5 bps/yr (the cost penalty for the filter-induced turnover). Filter is materially binding 37.2% of days and fully flat 1.5% (VIX > 40 was reached only in 2020 COVID and briefly in 2022). Median drawdown spell cut from 10 days to 4 days (**−60%**); maximum drawdown spell barely changed (1,083 → 1,068 days) — the filter is a short-cycle VIX/momentum protector, not a long-cycle regime detector. Mean daily scalar 0.84. **The conditional Sharpe test** is the smoking gun: on the 1,455 days the filter chooses to bind, the base #28 strategy earns Sharpe **−0.08** (yes, those are bad days), while the filtered #29 strategy earns Sharpe **+0.09** on the same days. The filter is **removing bad days specifically**, not randomly reducing exposure. Comparing to prior overlay attempts: #22 (crash filter on timing-artefact #18) had Sharpe Δ ≈ 0 and IR ~0 — vol-reducer only; #26 (TSMOM filter on dead-carry #20) had Sharpe Δ −0.06 and IR −0.18 — destroyed value; **#29 (crash filter on real trend-follower #28) has Sharpe Δ +0.09 and IR +0.14 — adds value**. The overlay's value is base-specific: it needs a base with real drawdowns that correlate with VIX spikes and the base's own momentum drawdowns. #28 has both (the 2022-24 MaxDD of −26.84% lined up partially with VIX elevation and trailing-return weakness); #22 had only the first (#18's drawdowns were partly synchronised with VIX but the base was bogus); #26 had neither (#20 had no real trend or drawdown). **This is the cleanest deployable risk-overlay result in the repo.**
+
+**Variables (code-level glossary).**
+
+| Variable | Meaning (5–10 words) |
+|---|---|
+| `base[weight_INSTR, t]` | Per-instrument daily weights from #28's CSV |
+| `vix[t]` | Daily VIX close (yfinance `^VIX`) |
+| `VIX_FULL_BELOW` | VIX level at which scalar is 1.0 (= 20.0) |
+| `VIX_FLAT_ABOVE` | VIX level at which scalar hits 0.0 (= 40.0) |
+| `vix_scale[t]` | Linear interp from 1.0→0.0 over VIX 20→40 |
+| `MOM_LOOKBACK_DAYS` | Self-momentum trailing window (= 20 days) |
+| `MOM_REF_DAYS` | Z-score reference window (= 252 days) |
+| `MOM_Z_TRIGGER` | Z-threshold for momentum gate (= −1.0) |
+| `MOM_SCALE_ON_TRIGGER` | Exposure scalar when gate triggers (= 0.5) |
+| `tr20[t]` | Trailing 20-day sum of base #28 net returns |
+| `z_tr20[t]` | Z-score of `tr20` vs trailing 252d mean and stdev |
+| `mom_scale[t]` | 0.5 when `z_tr20 < −1.0`, else 1.0 |
+| `scale_raw[t]` | `vix_scale × mom_scale`, clipped to [0, 1] |
+| `scale[t]` | `scale_raw.shift(1)` — applied to next day's positions |
+| `weights_filt[instr, t]` | `base_weights × scale` per instrument |
+| `gross_filt[t]` | `base_gross × scale` (linear scaling) |
+| `cost_filt[t]` | `|weights_filt.diff()|.sum() × 5 bps` (recomputed turnover) |
+| `net_filt[t]` | `gross_filt − cost_filt` |
+| `tracking_err` | Annualised stdev of `(net_filt − base_net)` |
+| `ir` | Information ratio: active return / tracking error |
+| `cost_of_insurance_bps` | Filter-induced cost increase per year, in bps |
+| `n_filter_active` | Days where `scale < 0.95` (materially binding) |
+| `n_filter_off` | Days where `scale < 0.05` (fully flat) |
+| `cond_base_sharpe` | Sharpe of base on filter-binding days only |
+| `cond_filt_sharpe` | Sharpe of filtered on filter-binding days only |
+| `median_dd_days`, `max_dd_days` | Drawdown spell duration stats |
+
+**Data sources.** Reuses #28's daily CSV (no new strategy fetch). VIX from yfinance `^VIX`.
+**Reference.** Brunnermeier, Nagel, Pedersen (2009). *"Carry Trades and Currency Crashes"*, NBER Macroeconomics Annual. Same overlay spec as Strategy #22.
+**Script.** [`strategies/strat_29_crash_filter_on_28.py`](strategies/strat_29_crash_filter_on_28.py)
+**Track record CSV.** [`live/track_record/strategy_29_crash_filter_on_28_track_record.csv`](live/track_record/strategy_29_crash_filter_on_28_track_record.csv)
+**Equity curve.** [`reports/strategy_29_crash_filter_on_28.png`](reports/strategy_29_crash_filter_on_28.png)
