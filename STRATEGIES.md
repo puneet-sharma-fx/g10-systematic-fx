@@ -55,6 +55,7 @@ The original core finding was that **the change in 2Y rate differential predicts
 | **25** | Turtle System 1 (no filter) on commodities + crypto (8 instruments, vol-targeted) | 2010-2024 | **0.43** | **Profit factor 1.36, daily skew +0.82.** Same code as #24b but cross-asset shift to its native habitat. BTC alone PF 2.93, ETH PF 2.49 (max win +300%). Long avg +2.70% vs short avg −0.67% — long side carries the edge. Validates implementation; isolates FX rejection to that asset class. |
 | **28** | 20/50 DMA crossover with 1 ATR stop on commodities + crypto (8 instruments, vol-targeted) | 2010-2024 | **0.42** | **Profit factor 1.47, daily skew +0.50.** Same code as #27 but cross-asset shift. BTC PF 2.96, ETH PF 3.30 (max win +281%). Long avg +3.08% / short avg −0.47%. Validates the asset-class hypothesis across BOTH MA-crossover and Turtle spec families. |
 | **29** | Crash filter overlay (VIX + self-momentum) on #28 | 2010-2024 | **0.51** | **First overlay in the repo to materially add Sharpe.** All metrics improve simultaneously: Sortino 0.63 → 0.75, MaxDD −26.84% → −19.15% (−7.7pp), Calmar 0.17 → 0.26, skew +0.50 → +0.62, ann ret +4.58% → +5.00%. IR +0.14. Conditional Sharpe test: on the 1,455 binding days, base earns −0.08, filtered earns +0.09 — filter is removing bad days specifically. |
+| **30** ❌ | Crash filter overlay (same spec) on #25 (Turtle base) | 2010-2024 | 0.41 (vs base 0.43) | **Cross-spec test FAILS — overlay doesn't generalise.** IR −0.23, Sharpe −0.02, Sortino −0.07, skew +0.82 → +0.30 (−0.52). MaxDD does improve (−7.3pp) but at the cost of returns (−1.31pp). Conditional Sharpe test: base earns +0.19 on binding days, filtered +0.00 — filter removes GOOD days, opposite to #29. Turtle's edge is vol-positive (breakouts during high-vol periods); MA-cross's edge isn't. Overlay is base-specific, not universal. |
 | **20** | Classical vol-normalised carry (Dupuy 2021 spec, monthly) | 2010-2024 | 0.07 | Confirms post-2008 carry decay; LEVEL signal nearly dead in this era |
 
 ## ❌ Failed / rejected / inconclusive
@@ -601,3 +602,54 @@ For an actual deployment decision, **#28 is the clearly more attractive choice**
 **Script.** [`strategies/strat_29_crash_filter_on_28.py`](strategies/strat_29_crash_filter_on_28.py)
 **Track record CSV.** [`live/track_record/strategy_29_crash_filter_on_28_track_record.csv`](live/track_record/strategy_29_crash_filter_on_28_track_record.csv)
 **Equity curve.** [`reports/strategy_29_crash_filter_on_28.png`](reports/strategy_29_crash_filter_on_28.png)
+
+---
+
+## Strategy #30 — Crash filter overlay on #25 (cross-spec test; filter DOES NOT generalise)
+
+**Explanation.** The cross-spec validation test for #29's finding. Strategy #29 showed the VIX + self-momentum crash scalar materially adds Sharpe on top of #28 (20/50 MA crossover on commodities + crypto). This module applies the **identical overlay spec** (no retuning) to **Strategy #25** (Turtle System 1 on the same universe). The two bases use identical instruments (Gold, Silver, Copper, WTI, NatGas, Soybean, BTC, ETH), identical inverse-vol sizing (5% per-instrument vol target, ±30% cap), identical cost model (10 bps RT per leg). The only difference is the trend-following spec: Turtle's 20-day breakout + 10-day reversion + 2N hard stop vs MA-crossover's 20/50 SMA + 1×ATR trailing stop. If the overlay's positive result on #28 was due to "trend-following + crash filter" as a general principle, the result should hold here. If the overlay is base-specific, this test reveals it.
+
+**Result** (2010–2024, daily, net of 10 bps RT per leg): **the overlay does NOT generalise — IR −0.23, Sharpe degrades modestly (0.43 → 0.41), and the conditional Sharpe test gives the opposite reading from #29**. Full table: Sharpe **0.43 → 0.41 (−0.02)**, Sortino **0.66 → 0.59 (−0.07)**, ann return **+6.29% → +4.98% (−1.31pp)**, ann vol **14.63% → 12.26% (−2.38pp)**, max DD **−35.14% → −27.83% (+7.31pp)**, Calmar 0.18 → 0.18 (flat), **daily skew +0.82 → +0.30 (−0.52)** — a significant degradation of the proper-trend-follower signature. Tracking error 5.76%, **information ratio −0.23** (overlay actively destroys risk-adjusted value), cost of insurance +17.6 bps/yr (higher friction than #29). Filter binding 38.2% of days, fully flat 1.4% — almost identical filter activity to #29, so the difference can't be attributed to "the filter didn't fire enough." Median drawdown spell barely improves (5 → 4 days); max drawdown spell unchanged (638 days). **The conditional Sharpe test is the smoking gun for failure**: on the 1,494 filter-binding days, **the #25 base earns Sharpe +0.19** (not bad days!) while the **filtered #30 earns Sharpe +0.00** on the same days. The filter is removing GOOD days, not bad ones — exactly opposite the #29 result. Three-base overlay comparison after this run:
+
+| Overlay | Base | Base SR | Filtered SR | Δ | IR | Verdict |
+|---|---|---:|---:|---:|---:|---|
+| #22 | #18 rate-diff (timing artefact) | 2.90 | 2.91 | +0.01 | ~0.00 | Vol-reducer only, base bogus |
+| **#29** | **#28 MA-cross (commod+crypto)** | **0.42** | **0.51** | **+0.09** | **+0.14** | **Adds value — removes bad days** |
+| **#30** | **#25 Turtle (commod+crypto)** | **0.43** | **0.41** | **−0.02** | **−0.23** | **Destroys value — removes good days** |
+
+**Interpretation.** Identical universe, identical overlay spec, opposite results. The crash filter's value is **spec-specific**, not universe-specific. The proper interpretation: the **Turtle 20/10/2N** captures trends with a tighter exit (10-day reversion) than the **20/50 MA crossover**, so it tends to be ALREADY positioned in winning trades when VIX spikes — the big wins in #25 happen DURING volatile periods because breakouts and vol are correlated. The MA crossover with the slower 20/50 signal is often still BUILDING into a trend when VIX spikes, so the filter cuts exposure during periods that would have been bad for #28 (the 1×ATR trailing stop is tight and gets stopped during chop). The Turtle's edge is more **vol-positive** than the MA crossover's — meaning the filter trims exactly the wrong days for #25. This is a real finding about how different trend-following specs interact with volatility regimes, not just a generic null result. **Honest research outcome**: the #29 result was NOT a universal "trend-following + crash filter" story — it was a #28-specific result. The overlay needs to be base-validated before deployment.
+
+**What this teaches the repo** (with the three-base comparison now complete):
+
+1. **Overlay works** when base drawdowns correlate with VIX spikes + self-momentum dips (i.e., crash conditions = base losses) — #29 case.
+2. **Overlay is neutral** when the base has no genuine drawdown signal to trim — #22 case (the underlying signal was a timing artefact).
+3. **Overlay destroys value** when the base's gains concentrate during the same vol-spike periods the filter trims — #30 case (Turtle catches vol-driven breakouts).
+
+The proper deployment rule for the overlay is therefore: **only apply it to bases where the conditional Sharpe test passes** (filter-binding days have negative base Sharpe). This is now a documented test in this repo.
+
+**Variables (code-level glossary).**
+
+| Variable | Meaning (5–10 words) |
+|---|---|
+| `base[weight_INSTR, t]` | Per-instrument daily weights from #25's CSV |
+| `vix[t]` | Daily VIX close (yfinance `^VIX`) |
+| `vix_scale[t]` | Linear interp from 1.0 to 0.0 over VIX 20→40 |
+| `tr20[t]` | Trailing 20-day sum of #25 base net returns |
+| `z_tr20[t]` | Z-score of `tr20` vs trailing 252d window |
+| `mom_scale[t]` | 0.5 when `z_tr20 < −1.0`, else 1.0 |
+| `scale_raw[t]` | `vix_scale × mom_scale` clipped to [0, 1] |
+| `scale[t]` | `scale_raw.shift(1)` — applied to next-day positions |
+| `weights_filt[instr, t]` | `base_weights × scale` per instrument |
+| `gross_filt[t]` | `base_gross × scale` (linear scaling) |
+| `cost_filt[t]` | Filtered turnover × 5 bps per unit |
+| `net_filt[t]` | `gross_filt − cost_filt` |
+| `ir` | Information ratio: active return / tracking error |
+| `cost_of_insurance_bps` | Filter-induced cost increase per year, in bps |
+| `cond_base_sharpe` | Sharpe of base on filter-binding days only |
+| `cond_filt_sharpe` | Sharpe of filtered on filter-binding days only |
+
+**Data sources.** Reuses #25's daily CSV. VIX from yfinance `^VIX`.
+**Reference.** Same overlay spec as #22 and #29 — no retuning. Brunnermeier, Nagel, Pedersen (2009).
+**Script.** [`strategies/strat_30_crash_filter_on_25.py`](strategies/strat_30_crash_filter_on_25.py)
+**Track record CSV.** [`live/track_record/strategy_30_crash_filter_on_25_track_record.csv`](live/track_record/strategy_30_crash_filter_on_25_track_record.csv)
+**Equity curve.** [`reports/strategy_30_crash_filter_on_25.png`](reports/strategy_30_crash_filter_on_25.png)
