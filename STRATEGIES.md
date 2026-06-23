@@ -603,6 +603,47 @@ For an actual deployment decision, **#28 is the clearly more attractive choice**
 **Track record CSV.** [`live/track_record/strategy_29_crash_filter_on_28_track_record.csv`](live/track_record/strategy_29_crash_filter_on_28_track_record.csv)
 **Equity curve.** [`reports/strategy_29_crash_filter_on_28.png`](reports/strategy_29_crash_filter_on_28.png)
 
+### #29 worst-period analysis — where the filter actually trimmed losses
+
+Defensive companion analysis to confirm yesterday's headline +0.09 Sharpe improvement is driven by the overlay catching the worst stretches (rather than by general exposure reduction).
+
+**Worst 15 calendar months on the #28 base vs #29 filtered.** Sum of losses on worst-15 months: base −73.5%, filtered −54.6%, **saved +18.9pp**. Of the 15 worst base months, the filter **trimmed 12, missed 2, was flat on 1**. The 5 biggest "saves" all happened during materially active filter regimes (mean monthly scale 0.32–0.50):
+
+| Month | #28 base | #29 filtered | Δ | Mean scale |
+|---|---:|---:|---:|---:|
+| **2022-10** | −5.11% | −2.11% | **+3.01pp** | 0.37 |
+| **2022-09** | −4.65% | −1.74% | **+2.91pp** | 0.32 |
+| **2020-09** | −5.86% | −3.13% | **+2.73pp** | 0.41 |
+| 2016-09 | −5.03% | −2.54% | +2.49pp | 0.50 |
+| 2022-11 | −4.17% | −2.05% | +2.12pp | 0.50 |
+
+The two misses (2023-08 and 2019-09) both had filter scalar above 0.80 — the filter wasn't firing materially. Those losses came from base-strategy signal failures **not** correlated with VIX spikes or self-momentum dips. Reasonable bounded limitation rather than systematic failure of the overlay.
+
+**Top 5 peak-to-trough drawdown episodes.** The worst single drawdown on the #28 base is the 2022-06 → 2023-09 cliff that we flagged in the sub-period analysis as the deployment-killing question. The filter trims it from **−26.84%** to **−19.15%** over the same dates — **7.7pp shallower drawdown on the most important episode**:
+
+| Rank | #28 base depth | Dates | #29 filtered depth | Same episode trimmed? |
+|---|---:|---|---:|---|
+| 1 | −26.84% | 2022-06 → 2023-09 | **−19.15%** | **Yes — 7.7pp trimmed** |
+| 2 | −22.06% | 2010-11 → 2014-06 | −18.36% (different episode) | Ranks shuffle |
+| 3 | −20.28% | 2017-09 → 2019-02 | −17.73% (different episode) | Ranks shuffle |
+
+**Tail-shape diagnostic.** The clean test that the IR's +0.14 isn't an artefact: the filter should asymmetrically clip the left tail. Daily return quantiles:
+
+| Quantile | #28 base | #29 filtered | Δ |
+|---|---:|---:|---:|
+| **1% (deep left)** | −1.79% | **−1.60%** | **+0.19pp** ← left tail trimmed |
+| 5% | −1.11% | −0.96% | +0.15pp ← left tail trimmed |
+| 95% | +1.12% | +1.03% | −0.09pp ← right tail clipped |
+| **99% (deep right)** | +2.06% | +1.91% | −0.15pp ← right tail clipped |
+| **Tail ratio** (95th / \|5th\|) | 1.01 | **1.07** | **+0.06** ← improvement |
+
+The filter trims the deep left tail (+0.19pp at the 1% quantile) materially more than it clips the corresponding right tail (−0.15pp at 99%). Tail ratio improves from 1.01 to 1.07. That's the structural reason the IR is positive — the overlay reshapes the distribution asymmetrically, not just narrows it.
+
+**Bottom line on #29's deployability**: the overlay's value isn't a statistical fluke. It engages during materially-bad stretches (worst-5 wins were all on low-scale months), trims the most important drawdown (2022-24 cliff), and reshapes the distribution to clip left more than right.
+
+**Script.** [`notebooks/worst_periods_strat29.py`](notebooks/worst_periods_strat29.py)
+**Chart.** [`reports/worst_periods_strat29.png`](reports/worst_periods_strat29.png)
+
 ---
 
 ## Strategy #30 — Crash filter overlay on #25 (cross-spec test; filter DOES NOT generalise)
