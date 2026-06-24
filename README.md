@@ -96,6 +96,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | **28** ✓ | **20/50 DMA crossover with 1 ATR stop on commodities + crypto** — companion to #27 on the same #25 universe; validates asset-class hypothesis across 2 spec families | **+0.42** (PF 1.47, skew +0.50) |
 | **29** 🛡️ | **Crash filter overlay (VIX + self-momentum) on #28** — first overlay in the repo to materially ADD Sharpe; all metrics improve simultaneously | **+0.51** (MaxDD −7.7pp, IR +0.14) |
 | **30** ❌ | Crash filter overlay (same spec) on #25 (Turtle base) — cross-spec test fails; overlay is base-specific, not universal | 0.41 (vs base 0.43, IR −0.23) |
+| **31** ❌ | Cross-sectional 5-day mean reversion on G10 FX (mirror image of #11 momentum, weekly rebalance) — 2nd-derivative test: neither direction works at 1-week horizon | **−0.19** (gross +0.08, cost drag 28%) |
 
 ---
 
