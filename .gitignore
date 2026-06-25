@@ -10,6 +10,7 @@ build/
 *.log
 data/raw/
 data/cache/
+data/economic_cache/
 *.csv
 *.parquet
 *.h5
