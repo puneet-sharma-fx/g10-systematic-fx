@@ -1,0 +1,65 @@
+code,label,ok,latest,latest_date,mom,yoy,z5y,freq,is_level,age_days,country,category
+US:RETAIL_SALES,Advance Monthly Retail Sales (RSAFS),True,763705.0000,2026-05-01,0.8809,6.8765,1.9636,M,False,58,US,consumer
+US:CONSUMER_CONF_MICH,U-Michigan Consumer Sentiment,True,44.8000,2026-05-01,-10.0402,-14.1762,-2.1729,M,False,58,US,consumer
+US:CPI_HEADLINE,CPI All Items SA (CPIAUCSL),True,333.9790,2026-05-01,0.4729,4.2700,1.6718,M,False,58,US,inflation
+US:CPI_CORE,CPI ex food & energy SA (CPILFESL),True,336.1210,2026-05-01,0.2081,2.9571,1.5016,M,False,58,US,inflation
+US:PCE_CORE,PCE price index ex food & energy (core),True,130.0820,2026-05-01,0.3201,3.4120,1.6421,M,False,58,US,inflation
+US:INDPRO,Industrial Production index (G.17),True,102.6475,2026-05-01,0.1351,1.6659,2.4949,M,False,58,US,investment
+US:GDPNOW,Atlanta Fed GDPNow nowcast,True,2.5438,2026-04-01,1.3046,-0.3582,0.1195,Q,True,88,US,investment
+US:TRADE_BALANCE,"Trade balance, goods & services (BOPGSTB)",True,-55881.0000,2026-04-01,704.0000,4460.0000,0.9461,M,True,88,US,trade
+US:CASE_SHILLER,S&P/Case-Shiller National HPI (SA),True,331.2650,2026-03-01,-0.2208,0.6646,1.1022,M,False,119,US,housing
+US:HOUSING_STARTS,New residential housing starts (SAAR),True,1177.0000,2026-05-01,-15.4454,-8.6889,-1.9236,M,False,58,US,housing
+US:MORTGAGE_30Y,Freddie Mac 30y fixed mortgage rate (PMMS),True,6.4900,2026-06-25,0.0200,-0.2800,0.3691,W,True,3,US,housing
+UK:RETAIL_SALES,ONS retail sales volume index (FRED mirror),True,139.8002,2023-11-01,1.1794,5.6288,1.6488,M,False,970,UK,consumer
+UK:CPI_HEADLINE,UK CPI All Items (FRED mirror of ONS),True,3.4000,2025-03-01,-8.1081,-10.5263,-0.3505,M,False,484,UK,inflation
+UK:CPI_CORE,UK CPI ex food/energy/alcohol/tobacco,True,-0.1000,2023-11-01,-125.0000,-133.3333,-1.1215,M,False,970,UK,inflation
+UK:INDPRO,UK Index of Production (FRED mirror),True,100.2633,2024-03-01,0.2105,0.5280,-0.5632,M,False,849,UK,investment
+UK:GDP_QOQ,"UK real GDP, QoQ (ONS / FRED mirror)",True,432422.1000,2020-07-01,16.0035,-8.5800,-1.0379,Q,False,2188,UK,investment
+UK:TRADE_BALANCE,"UK trade balance (goods+services, ONS via FRED)",True,-22591310000.0000,2026-04-01,426300000.0000,-2678620000.0000,-1.4359,M,True,88,UK,trade
+EA:RETAIL_SALES,Euro area retail trade volume (Eurostat via FRED),True,111.6093,2023-10-01,0.0897,-0.9760,0.1656,M,False,1001,EA,consumer
+EA:HICP_NATIVE,EA HICP YoY all-items (ECB native — alternate to FRED),True,1.9000,2025-12-01,-0.2000,-0.5000,-0.8232,M,True,209,EA,inflation
+EA:HICP_CORE,Euro area HICP ex food/energy/alcohol/tobacco (Eurostat),True,2.3000,2025-12-01,-0.1000,-0.4000,-0.6016,M,True,209,EA,inflation
+EA:INDPRO,Euro area industrial production (Eurostat via FRED),True,102.6914,2023-10-01,-0.6770,-5.6933,-0.2092,M,False,1001,EA,investment
+EA:EURIBOR_3M,"EURIBOR 3-month, monthly average (ECB)",True,2.2261,2026-05-01,0.0508,0.1389,0.1318,M,True,58,EA,investment
+EA:TRADE_BALANCE,Euro area trade balance (OECD MEI via FRED — stale past 2022),True,-18136100000.0000,2022-12-01,-3720700000.0000,-3268400000.0000,-1.3183,M,True,1305,EA,trade
+EA:HPI_QUARTERLY,"Eurostat House Price Index (quarterly, EA-wide YoY)",True,5.1000,2025-10-01,0.0000,0.9000,0.2150,Q,True,270,EA,housing
+JP:RETAIL_SALES,Japan retail sales index (OECD MEI via FRED),True,110.5513,2023-10-01,-1.6859,4.0376,1.5949,M,False,1001,JP,consumer
+JP:CPI_HEADLINE,Japan CPI all items (OECD MEI via FRED),True,101.2980,2021-06-01,0.1006,-0.4005,0.1242,M,False,1853,JP,inflation
+JP:INDPRO,Japan industrial production index (OECD MEI via FRED),True,92.3128,2024-03-01,4.0041,-2.9694,-0.6271,M,False,849,JP,investment
+JP:GDP_REAL,"Japan real GDP (quarterly, OECD via FRED)",True,593218.8000,2026-01-01,0.4526,0.3170,1.4608,Q,False,178,JP,investment
+JP:TRADE_BALANCE,"Japan trade balance, goods+services (OECD via FRED)",True,1878878000.0000,2026-04-01,-2173858000.0000,2915599000.0000,1.0184,M,True,88,JP,trade
+JP:HPI_BIS,Japan house price index (BIS quarterly via FRED),True,121.3699,2025-10-01,-1.4528,2.3086,0.3766,Q,False,270,JP,housing
+CA:RETAIL_SALES,Canada retail sales index (OECD MEI via FRED),True,146.2994,2023-10-01,0.7193,2.1750,1.2810,M,False,1001,CA,consumer
+CA:CPI_HEADLINE,Canada CPI all items (OECD MEI via FRED),True,129.1809,2025-03-01,0.3067,2.3153,1.3703,M,False,484,CA,inflation
+CA:INDPRO,Canada industrial production index (OECD MEI via FRED),True,107.7144,2024-02-01,0.1437,0.0103,0.6164,M,False,878,CA,investment
+CA:GDP_REAL,"Canada real GDP (quarterly, OECD via FRED)",True,114.2572,2023-07-01,-0.2666,0.4651,1.0883,Q,False,1093,CA,investment
+CA:TRADE_BALANCE,Canada trade balance (OECD via FRED),True,2292818000.0000,2026-04-01,2426155300.0000,6692518000.0000,0.5547,M,True,88,CA,trade
+CA:HPI_BIS,Canada house price index (BIS quarterly via FRED),True,140.4085,2026-01-01,-1.3223,-6.8079,-1.3867,Q,False,178,CA,housing
+CH:RETAIL_SALES,Switzerland retail sales index (OECD MEI via FRED),True,110.1908,2023-11-01,0.5474,1.4733,0.8871,M,False,970,CH,consumer
+CH:CPI_HEADLINE,Switzerland CPI all items (OECD MEI via FRED),True,107.7312,2025-04-01,0.0082,0.0343,1.1939,M,False,453,CH,inflation
+CH:POLICY_RATE,Switzerland 3m interbank rate (SNB policy proxy),True,-0.0381,2026-05-01,0.0017,-0.1301,-0.5548,M,True,58,CH,investment
+CH:GDP_REAL,"Switzerland real GDP (quarterly, OECD via FRED)",True,114.7988,2023-07-01,0.2706,0.4264,1.1667,Q,False,1093,CH,investment
+CH:TRADE_BALANCE,Switzerland trade balance (OECD via FRED),True,3930369000.0000,2026-04-01,883000.0000,-3636975000.0000,-0.6413,M,True,88,CH,trade
+CH:HPI_BIS,Switzerland house price index (BIS quarterly via FRED),True,163.1733,2026-01-01,1.1095,4.5464,2.1489,Q,False,178,CH,housing
+AU:CPI_HEADLINE,"Australia CPI all items (quarterly, OECD via FRED)",True,130.6710,2025-01-01,0.9325,2.4018,1.3591,Q,False,543,AU,inflation
+AU:INDPRO,"Australia industrial production (quarterly, OECD via FRED)",True,110.1808,2023-10-01,0.4254,0.0369,-0.2763,Q,False,1001,AU,investment
+AU:GDP_REAL,"Australia real GDP (quarterly, OECD via FRED)",True,120.6615,2023-07-01,0.2120,2.0536,1.4332,Q,False,1093,AU,investment
+AU:POLICY_RATE,Australia 3m interbank rate (RBA cash rate proxy),True,4.4300,2026-05-01,0.0900,0.6500,0.8190,M,True,58,AU,investment
+AU:UNEMPLOYMENT,Australia harmonised unemployment rate (OECD via FRED),True,4.4878,2026-04-01,0.2098,0.4369,1.0774,M,True,88,AU,investment
+AU:TRADE_BALANCE,Australia trade balance (OECD via FRED),True,330217800.0000,2026-04-01,-1282245200.0000,-2805205200.0000,-1.7791,M,True,88,AU,trade
+NZ:CPI_HEADLINE,"New Zealand CPI all items (quarterly, OECD via FRED)",True,132.7975,2025-01-01,0.9324,2.5257,1.3469,Q,False,543,NZ,inflation
+NZ:INDPRO,New Zealand industrial production (quarterly),True,95.7247,2023-10-01,-1.4825,-2.4344,-1.4254,Q,False,1001,NZ,investment
+NZ:GDP_REAL,"New Zealand real GDP (quarterly, OECD via FRED)",True,124.8480,2023-07-01,-0.7120,-1.4885,0.9043,Q,False,1093,NZ,investment
+NZ:TRADE_BALANCE,New Zealand trade balance (OECD via FRED),True,1122609000.0000,2026-04-01,871165600.0000,423162700.0000,2.4248,M,True,88,NZ,trade
+SE:RETAIL_SALES,Sweden retail sales index (OECD MEI via FRED),True,137.0256,2023-10-01,1.4826,4.9847,1.7208,M,False,1001,SE,consumer
+SE:CPI_HEADLINE,Sweden CPI all items (OECD MEI via FRED),True,132.8245,2025-03-01,-0.6872,0.4683,1.1697,M,False,484,SE,inflation
+SE:INDPRO,Sweden industrial production index (OECD MEI via FRED),True,119.0000,2023-12-01,2.1459,4.0210,1.1222,M,False,940,SE,investment
+SE:POLICY_RATE,Sweden 3m interbank rate (Riksbank policy proxy),True,1.9566,2026-05-01,0.0208,-0.3459,-0.1100,M,True,58,SE,investment
+SE:TRADE_BALANCE,Sweden trade balance (OECD via FRED),True,-786974100.0000,2026-04-01,-1527558000.0000,-1328313200.0000,-1.4700,M,True,88,SE,trade
+SE:HPI_BIS,Sweden house price index (BIS quarterly via FRED),True,130.9817,2025-10-01,0.5333,0.6900,-0.7701,Q,False,270,SE,housing
+NO:RETAIL_SALES,Norway retail sales index (OECD MEI via FRED),True,136.1567,2023-11-01,0.1472,2.7946,1.2911,M,False,970,NO,consumer
+NO:CPI_HEADLINE,Norway CPI all items (OECD MEI via FRED),True,137.0000,2025-04-01,0.6613,2.4682,1.5064,M,False,453,NO,inflation
+NO:INDPRO,Norway industrial production index (OECD MEI via FRED),True,101.7067,2023-12-01,1.0404,-4.0615,0.0825,M,False,940,NO,investment
+NO:POLICY_RATE,Norway 3m interbank rate (Norges Bank policy proxy),True,4.5600,2026-05-01,0.0800,-0.0800,0.6941,M,True,58,NO,investment
+NO:TRADE_BALANCE,Norway trade balance (OECD via FRED),True,8918723000.0000,2026-04-01,-1057605000.0000,3881937000.0000,0.2392,M,True,88,NO,trade
+NO:HPI_BIS,Norway house price index (BIS quarterly via FRED),True,134.2045,2026-01-01,2.2163,0.5201,-0.0389,Q,False,178,NO,housing

@@ -44,7 +44,8 @@ Gitignored. Cache TTL not enforced — call refresh_all() to update.
 Requires:
   - `FRED_API_KEY` environment variable (free at fred.stlouisfed.org)
   - `fredapi` (already a repo dependency)
-  - `pandasdmx` (NOT yet installed — needed only for ECB/Eurostat live mode)
+  - `requests` (already a repo dependency — used for ECB/Eurostat/ONS REST)
+  - No pandasdmx dependency: ECB and Eurostat SDMX-JSON are parsed directly.
 
 CLI:
   python -m data.economic --list                          # show full catalog
@@ -70,7 +71,7 @@ HERE = Path(__file__).resolve().parent
 CACHE_DIR = HERE / "economic_cache"
 CACHE_DIR.mkdir(exist_ok=True)
 
-Country  = Literal["US", "UK", "EA"]
+Country  = Literal["US", "UK", "EA", "JP", "AU", "CA", "CH", "NZ", "SE", "NO"]
 Category = Literal["consumer", "inflation", "investment", "trade", "housing"]
 Source   = Literal["fred", "ecb", "eurostat", "ons", "stub"]
 
@@ -152,17 +153,77 @@ CATALOG: tuple[SeriesSpec, ...] = (
     SeriesSpec("EA:CONSUMER_CONF_DG",     "EA", "consumer",   "DG ECFIN Consumer Confidence (no FRED)",                   "stub", "DGECFIN_CC",       "M", 0),
     # inflation
     SeriesSpec("EA:HICP_HEADLINE",        "EA", "inflation",  "Euro area HICP all items (Eurostat via FRED)",             "fred", "CP0000EZ19M086NEST","M", 17),
-    SeriesSpec("EA:HICP_CORE",            "EA", "inflation",  "Euro area HICP ex food/energy/alcohol/tobacco (Eurostat native)", "eurostat", "prc_hicp_manr", "M", 17),
+    SeriesSpec("EA:HICP_CORE",            "EA", "inflation",  "Euro area HICP ex food/energy/alcohol/tobacco (Eurostat)", "eurostat", "prc_hicp_manr?coicop=TOT_X_NRG_FOOD&unit=RCH_A&geo=EA20", "M", 17),
     # investment
     SeriesSpec("EA:INDPRO",               "EA", "investment", "Euro area industrial production (Eurostat via FRED)",      "fred", "EA19PRINTO01IXOBSAM","M", 45),
     SeriesSpec("EA:HCOB_FLASH_PMI_MFG",   "EA", "investment", "HCOB / S&P Global Eurozone Mfg Flash PMI",                 "stub", "HCOB_EA_MFG_PMI",  "M", 0),
     SeriesSpec("EA:IFO_BUSINESS_CLIMATE", "EA", "investment", "ifo Business Climate Index (Germany)",                     "stub", "IFO_GER_BCI",      "M", 0),
     SeriesSpec("EA:ZEW_SENTIMENT",        "EA", "investment", "ZEW Indicator of Economic Sentiment (Germany)",            "stub", "ZEW_GER",          "M", 0),
     # trade
-    SeriesSpec("EA:TRADE_BALANCE",        "EA", "trade",      "Euro area trade balance (ECB BPM6)",                       "ecb",  "BP6.M.N.I8.W1.S1.S1.T.B.GS.._Z._Z._Z.EUR._T._X.N", "M", 60),
+    SeriesSpec("EA:TRADE_BALANCE",        "EA", "trade",      "Euro area trade balance (OECD MEI via FRED — stale past 2022)", "fred", "XTNTVA01EZM664S", "M", 60),
+    SeriesSpec("EA:EURIBOR_3M",           "EA", "investment", "EURIBOR 3-month, monthly average (ECB)",                   "ecb",      "FM/M.U2.EUR.RT.MM.EURIBOR3MD_.HSTA", "M", 5),
+    SeriesSpec("EA:HICP_NATIVE",          "EA", "inflation",  "EA HICP YoY all-items (ECB native — alternate to FRED)",   "ecb",      "ICP/M.U2.N.000000.4.ANR",            "M", 17),
     # housing
-    SeriesSpec("EA:HPI_QUARTERLY",        "EA", "housing",    "Eurostat House Price Index (quarterly, EA-wide)",          "eurostat", "prc_hpi_q",   "Q", 90),
+    SeriesSpec("EA:HPI_QUARTERLY",        "EA", "housing",    "Eurostat House Price Index (quarterly, EA-wide YoY)",      "eurostat", "prc_hpi_q?unit=RCH_A&purchase=TOTAL&geo=EA20", "Q", 90),
     SeriesSpec("EA:EUROPACE_EPX_DE",      "EA", "housing",    "Europace EPX (monthly Germany HPI)",                       "stub", "EUROPACE_EPX",     "M", 14),
+
+    # ───────────────────────────── JP ────────────────────────────────────
+    SeriesSpec("JP:RETAIL_SALES",         "JP", "consumer",   "Japan retail sales index (OECD MEI via FRED)",             "fred", "JPNSLRTTO02IXOBSAM","M", 45),
+    SeriesSpec("JP:CPI_HEADLINE",         "JP", "inflation",  "Japan CPI all items (OECD MEI via FRED)",                  "fred", "JPNCPIALLMINMEI",  "M", 25),
+    SeriesSpec("JP:INDPRO",               "JP", "investment", "Japan industrial production index (OECD MEI via FRED)",    "fred", "JPNPROINDMISMEI",  "M", 45),
+    SeriesSpec("JP:GDP_REAL",             "JP", "investment", "Japan real GDP (quarterly, OECD via FRED)",                "fred", "JPNRGDPEXP",       "Q", 75),
+    SeriesSpec("JP:TRADE_BALANCE",        "JP", "trade",      "Japan trade balance, goods+services (OECD via FRED)",      "fred", "JPNXTNTVA01CXMLM", "M", 45),
+    SeriesSpec("JP:HPI_BIS",              "JP", "housing",    "Japan house price index (BIS quarterly via FRED)",         "fred", "QJPR628BIS",       "Q", 90),
+
+    # ───────────────────────────── AU ────────────────────────────────────
+    SeriesSpec("AU:CPI_HEADLINE",         "AU", "inflation",  "Australia CPI all items (quarterly, OECD via FRED)",       "fred", "AUSCPIALLQINMEI",  "Q", 30),
+    SeriesSpec("AU:INDPRO",               "AU", "investment", "Australia industrial production (quarterly, OECD via FRED)","fred", "AUSPROINDQISMEI",  "Q", 70),
+    SeriesSpec("AU:GDP_REAL",             "AU", "investment", "Australia real GDP (quarterly, OECD via FRED)",            "fred", "NAEXKP01AUQ661S",  "Q", 70),
+    SeriesSpec("AU:POLICY_RATE",          "AU", "investment", "Australia 3m interbank rate (RBA cash rate proxy)",        "fred", "IR3TIB01AUM156N",  "M", 5),
+    SeriesSpec("AU:UNEMPLOYMENT",         "AU", "investment", "Australia harmonised unemployment rate (OECD via FRED)",   "fred", "LRHUTTTTAUM156S",  "M", 30),
+    SeriesSpec("AU:TRADE_BALANCE",        "AU", "trade",      "Australia trade balance (OECD via FRED)",                  "fred", "AUSXTNTVA01CXMLM", "M", 45),
+    SeriesSpec("AU:HPI_CORELOGIC",        "AU", "housing",    "Australia CoreLogic Home Value Index — scraper needed",    "stub", "CORELOGIC_AU",     "M", 14),
+
+    # ───────────────────────────── CA ────────────────────────────────────
+    SeriesSpec("CA:RETAIL_SALES",         "CA", "consumer",   "Canada retail sales index (OECD MEI via FRED)",            "fred", "CANSLRTTO02IXOBSAM","M", 45),
+    SeriesSpec("CA:CPI_HEADLINE",         "CA", "inflation",  "Canada CPI all items (OECD MEI via FRED)",                 "fred", "CANCPIALLMINMEI",  "M", 25),
+    SeriesSpec("CA:INDPRO",               "CA", "investment", "Canada industrial production index (OECD MEI via FRED)",   "fred", "CANPROINDMISMEI",  "M", 60),
+    SeriesSpec("CA:GDP_REAL",             "CA", "investment", "Canada real GDP (quarterly, OECD via FRED)",               "fred", "NAEXKP01CAQ661S",  "Q", 60),
+    SeriesSpec("CA:TRADE_BALANCE",        "CA", "trade",      "Canada trade balance (OECD via FRED)",                     "fred", "CANXTNTVA01CXMLM", "M", 45),
+    SeriesSpec("CA:HPI_BIS",              "CA", "housing",    "Canada house price index (BIS quarterly via FRED)",        "fred", "QCAR628BIS",       "Q", 90),
+
+    # ───────────────────────────── CH ────────────────────────────────────
+    SeriesSpec("CH:RETAIL_SALES",         "CH", "consumer",   "Switzerland retail sales index (OECD MEI via FRED)",       "fred", "CHESLRTTO02IXOBSAM","M", 45),
+    SeriesSpec("CH:CPI_HEADLINE",         "CH", "inflation",  "Switzerland CPI all items (OECD MEI via FRED)",            "fred", "CHECPIALLMINMEI",  "M", 25),
+    SeriesSpec("CH:GDP_REAL",             "CH", "investment", "Switzerland real GDP (quarterly, OECD via FRED)",          "fred", "NAEXKP01CHQ661S",  "Q", 70),
+    SeriesSpec("CH:POLICY_RATE",          "CH", "investment", "Switzerland 3m interbank rate (SNB policy proxy)",         "fred", "IR3TIB01CHM156N",  "M", 5),
+    SeriesSpec("CH:TRADE_BALANCE",        "CH", "trade",      "Switzerland trade balance (OECD via FRED)",                "fred", "CHEXTNTVA01CXMLM", "M", 45),
+    SeriesSpec("CH:HPI_BIS",              "CH", "housing",    "Switzerland house price index (BIS quarterly via FRED)",   "fred", "QCHR628BIS",       "Q", 90),
+
+    # ───────────────────────────── NZ ────────────────────────────────────
+    SeriesSpec("NZ:CPI_HEADLINE",         "NZ", "inflation",  "New Zealand CPI all items (quarterly, OECD via FRED)",     "fred", "NZLCPIALLQINMEI",  "Q", 30),
+    SeriesSpec("NZ:INDPRO",               "NZ", "investment", "New Zealand industrial production (quarterly)",            "fred", "NZLPROINDQISMEI",  "Q", 70),
+    SeriesSpec("NZ:GDP_REAL",             "NZ", "investment", "New Zealand real GDP (quarterly, OECD via FRED)",          "fred", "NAEXKP01NZQ661S",  "Q", 70),
+    SeriesSpec("NZ:TRADE_BALANCE",        "NZ", "trade",      "New Zealand trade balance (OECD via FRED)",                "fred", "NZLXTNTVA01CXMLM", "M", 45),
+    SeriesSpec("NZ:HPI_REINZ",            "NZ", "housing",    "REINZ House Price Index — scraper needed",                 "stub", "REINZ_HPI",        "M", 14),
+
+    # ───────────────────────────── SE ────────────────────────────────────
+    SeriesSpec("SE:RETAIL_SALES",         "SE", "consumer",   "Sweden retail sales index (OECD MEI via FRED)",            "fred", "SWESLRTTO02IXOBSAM","M", 45),
+    SeriesSpec("SE:CPI_HEADLINE",         "SE", "inflation",  "Sweden CPI all items (OECD MEI via FRED)",                 "fred", "SWECPIALLMINMEI",  "M", 25),
+    SeriesSpec("SE:INDPRO",               "SE", "investment", "Sweden industrial production index (OECD MEI via FRED)",   "fred", "SWEPROINDMISMEI",  "M", 60),
+    SeriesSpec("SE:GDP_REAL",             "SE", "investment", "Sweden real GDP (quarterly, OECD via FRED)",               "fred", "NAEXKP01SEQ661S",  "Q", 60),
+    SeriesSpec("SE:POLICY_RATE",          "SE", "investment", "Sweden 3m interbank rate (Riksbank policy proxy)",         "fred", "IR3TIB01SEM156N",  "M", 5),
+    SeriesSpec("SE:TRADE_BALANCE",        "SE", "trade",      "Sweden trade balance (OECD via FRED)",                     "fred", "SWEXTNTVA01CXMLM", "M", 45),
+    SeriesSpec("SE:HPI_BIS",              "SE", "housing",    "Sweden house price index (BIS quarterly via FRED)",        "fred", "QSER628BIS",       "Q", 90),
+
+    # ───────────────────────────── NO ────────────────────────────────────
+    SeriesSpec("NO:RETAIL_SALES",         "NO", "consumer",   "Norway retail sales index (OECD MEI via FRED)",            "fred", "NORSLRTTO02IXOBSAM","M", 45),
+    SeriesSpec("NO:CPI_HEADLINE",         "NO", "inflation",  "Norway CPI all items (OECD MEI via FRED)",                 "fred", "NORCPIALLMINMEI",  "M", 25),
+    SeriesSpec("NO:INDPRO",               "NO", "investment", "Norway industrial production index (OECD MEI via FRED)",   "fred", "NORPROINDMISMEI",  "M", 60),
+    SeriesSpec("NO:GDP_REAL",             "NO", "investment", "Norway real GDP (quarterly, OECD via FRED)",               "fred", "NAEXKP01NOQ661S",  "Q", 60),
+    SeriesSpec("NO:POLICY_RATE",          "NO", "investment", "Norway 3m interbank rate (Norges Bank policy proxy)",      "fred", "IR3TIB01NOM156N",  "M", 5),
+    SeriesSpec("NO:TRADE_BALANCE",        "NO", "trade",      "Norway trade balance (OECD via FRED)",                     "fred", "NORXTNTVA01CXMLM", "M", 45),
+    SeriesSpec("NO:HPI_BIS",              "NO", "housing",    "Norway house price index (BIS quarterly via FRED)",        "fred", "QNOR628BIS",       "Q", 90),
 )
 
 
@@ -184,47 +245,103 @@ def _pull_fred(series_id: str, start: Optional[str] = None,
     return fred.get_series(series_id, observation_start=start, observation_end=end)
 
 
-def _pull_ecb(flow_key: str, start: Optional[str] = None,
+def _pull_ecb(source_id: str, start: Optional[str] = None,
               end: Optional[str] = None) -> pd.Series:
-    """ECB SDMX via pandasdmx. Requires the dependency to be installed."""
-    try:
-        import pandasdmx as sdmx
-    except ImportError as exc:
-        raise NotImplementedError(
-            "ECB SDMX pull requires `pandasdmx`. Install with `pip install pandasdmx`."
-        ) from exc
-    # flow_key encodes the full SDMX key. For an MVP we just dispatch and let
-    # the caller construct the key correctly.
-    flow, key = flow_key.split(".", 1) if "." in flow_key else (flow_key, None)
-    resp = sdmx.Request("ECB").data(flow, key=key)
-    df = resp.to_pandas()
-    if isinstance(df, pd.DataFrame):
-        df = df.squeeze("columns") if df.shape[1] == 1 else df.iloc[:, 0]
+    """
+    ECB SDMX-JSON via direct REST. Lighter than pandasdmx, no extra dependency.
+
+    source_id format: "<DATASET>/<SERIES_KEY>"
+      e.g. "ICP/M.U2.N.000000.4.ANR"        — EA HICP YoY
+           "FM/M.U2.EUR.RT.MM.EURIBOR3MD_.HSTA" — EURIBOR 3M monthly avg
+    """
+    import requests
+    if "/" not in source_id:
+        raise ValueError(f"ECB source_id must be 'DATASET/SERIES_KEY', got {source_id!r}")
+    url = f"https://data-api.ecb.europa.eu/service/data/{source_id}"
+    r = requests.get(url, timeout=60, headers={"Accept": "application/json"})
+    r.raise_for_status()
+    payload = r.json()
+    ds = payload.get("dataSets", [{}])[0]
+    series_dict = ds.get("series", {})
+    if not series_dict:
+        return pd.Series(dtype=float, name=source_id)
+    # First (and usually only) series
+    series_key = next(iter(series_dict))
+    obs = series_dict[series_key].get("observations", {})
+    # Resolve obs index → date string
+    time_values = (payload.get("structure", {})
+                   .get("dimensions", {})
+                   .get("observation", [{}])[0]
+                   .get("values", []))
+    out = {}
+    for obs_idx, val_arr in obs.items():
+        i = int(obs_idx)
+        if i < len(time_values):
+            date_str = time_values[i].get("id", "")
+            if val_arr and val_arr[0] is not None:
+                try:
+                    out[pd.to_datetime(date_str)] = float(val_arr[0])
+                except Exception:
+                    continue
+    s = pd.Series(out).sort_index()
     if start:
-        df = df.loc[df.index >= pd.to_datetime(start)]
+        s = s.loc[s.index >= pd.to_datetime(start)]
     if end:
-        df = df.loc[df.index <= pd.to_datetime(end)]
-    return df
+        s = s.loc[s.index <= pd.to_datetime(end)]
+    return s
 
 
-def _pull_eurostat(dataset: str, start: Optional[str] = None,
+def _pull_eurostat(source_id: str, start: Optional[str] = None,
                    end: Optional[str] = None) -> pd.Series:
-    """Eurostat SDMX via pandasdmx. Default key picks EA19 aggregate."""
-    try:
-        import pandasdmx as sdmx
-    except ImportError as exc:
-        raise NotImplementedError(
-            "Eurostat SDMX pull requires `pandasdmx`. Install with `pip install pandasdmx`."
-        ) from exc
-    resp = sdmx.Request("ESTAT").data(dataset)
-    df = resp.to_pandas()
-    if isinstance(df, pd.DataFrame) and df.shape[1] > 1:
-        df = df.iloc[:, 0]  # naive: first column
+    """
+    Eurostat JSON-stat via direct REST. No pandasdmx dependency.
+
+    source_id format: "<dataset>?<param>=<value>&<param>=<value>"
+      e.g. "prc_hicp_manr?coicop=CP00&unit=RCH_A&geo=EA20"   — EA HICP YoY
+           "prc_hpi_q?unit=RCH_A&purchase=TOTAL&geo=EA20"     — EA HPI YoY
+    """
+    import requests
+    if "?" in source_id:
+        dataset, qs = source_id.split("?", 1)
+        params_dict: dict[str, str] = {}
+        for pair in qs.split("&"):
+            if "=" in pair:
+                k, v = pair.split("=", 1)
+                params_dict[k] = v
+    else:
+        dataset, params_dict = source_id, {}
+    params_dict.setdefault("format", "JSON")
+    params_dict.setdefault("lang", "EN")
+    url = f"https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/{dataset}"
+    r = requests.get(url, params=params_dict, timeout=60)
+    r.raise_for_status()
+    payload = r.json()
+    values = payload.get("value", {})
+    times = (payload.get("dimension", {})
+             .get("time", {}).get("category", {}).get("index", {}))
+    # times maps "2024-01" -> position_index
+    inv_times = {pos: t for t, pos in times.items()}
+    out = {}
+    for pos_str, val in values.items():
+        try:
+            pos = int(pos_str)
+        except ValueError:
+            continue
+        # Single-cell datasets: pos maps directly to time
+        # Multi-dim datasets: pos is a flat index into product of dims; we
+        # rely on the caller's params being specific enough that time is the
+        # only varying dimension
+        if pos in inv_times:
+            try:
+                out[pd.to_datetime(inv_times[pos])] = float(val)
+            except Exception:
+                continue
+    s = pd.Series(out).sort_index()
     if start:
-        df = df.loc[df.index >= pd.to_datetime(start)]
+        s = s.loc[s.index >= pd.to_datetime(start)]
     if end:
-        df = df.loc[df.index <= pd.to_datetime(end)]
-    return df
+        s = s.loc[s.index <= pd.to_datetime(end)]
+    return s
 
 
 def _pull_ons(timeseries: str, dataset: str = "MM23",
