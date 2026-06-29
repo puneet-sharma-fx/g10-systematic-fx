@@ -97,6 +97,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | **29** 🛡️ | **Crash filter overlay (VIX + self-momentum) on #28** — first overlay in the repo to materially ADD Sharpe; all metrics improve simultaneously | **+0.51** (MaxDD −7.7pp, IR +0.14) |
 | **30** ❌ | Crash filter overlay (same spec) on #25 (Turtle base) — cross-spec test fails; overlay is base-specific, not universal | 0.41 (vs base 0.43, IR −0.23) |
 | **31** ❌ | Cross-sectional 5-day mean reversion on G10 FX (mirror image of #11 momentum, weekly rebalance) — 2nd-derivative test: neither direction works at 1-week horizon | **−0.19** (gross +0.08, cost drag 28%) |
+| **32** ❌ | Cross-sectional inflation-differential on G10 FX (Taylor rule, monthly rebalance) — first strategy to use new `data/economic.py` ingestion; falsifies cross-sectional Taylor-rule signal in post-GFC era | **−0.13** (gross same; signal "stuck" on structural CCY differences) |
 
 ---
 
