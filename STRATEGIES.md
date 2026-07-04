@@ -39,7 +39,11 @@ The original core finding was that **the change in 2Y rate differential predicts
 
 ## ✅ Working strategies (verified, net Sharpe > 1)
 
-*No directional strategy has yet survived the time-alignment rigour check. Repo is in active reconstruction mode pending properly time-aligned signals.*
+| # | Strategy | Period | Net Sharpe | Notes |
+|---|---|---|---|---|
+| **35** | Crypto cross-sectional 3-month momentum (10 majors, long-top-3 EW, monthly rebal) | 2015-2024 | **1.44** | **Beats every benchmark cleanly: BTC B&H (1.24), ETH B&H (0.69), and equal-weight passive of the same universe (1.37). IR vs EW passive +0.35 → the momentum tilt earns its keep above naive diversification.** Ann return 119.6% vs BTC 84.6% vs EW passive 107.9%. Cumulative excess over EW: +83pp. **Caveats:** MaxDD −87.9% (no risk overlay); edge concentrated in 2021 (Sharpe 3.38 vs EW 3.06) — much more marginal in 2019–20 recovery and 2023–24. Not a timing artefact (yfinance-only, no rate data). First clean directional win in the repo.
+
+*No FX-directional strategy has yet survived the time-alignment rigour check for the rate-diff family. Repo is in active reconstruction mode pending properly time-aligned signals.*
 
 ## 🛡️ Risk overlays (deployable independent of base signal)
 

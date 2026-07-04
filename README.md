@@ -100,6 +100,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | **32** ❌ | Cross-sectional inflation-differential on G10 FX (Taylor rule, monthly rebalance) — first strategy to use new `data/economic.py` ingestion; falsifies cross-sectional Taylor-rule signal in post-GFC era | **−0.13** (gross same; signal "stuck" on structural CCY differences) |
 | **33** ⚠️ | SPY 200-DMA tactical allocation (Faber 2007) — first US-equity strategy in repo | **0.88** (vs SPY B&H 0.84) — wins on Sharpe by +0.04 but gives up 4.3pp/yr return; conditional Sharpe test FAILS |
 | **34** ❌ | Faber 5-asset GTAA (SPY, EFA, AGG, VNQ, GLD) — the "correct" Faber 2007 spec | **0.61** — loses to SPY B&H (−0.22), 60/40 (−0.29), and even equal-weight passive 5-asset (−0.10); definitive Faber-in-modern-data rejection |
+| **35** ✅ | **Crypto cross-sectional 3-month momentum on 10 majors** (BTC/ETH/SOL/BNB/ADA/DOGE/AVAX/LINK/DOT/XRP) — long top-3 EW, monthly rebal, 30 bps RT retail-crypto cost. **First clean directional win in the repo.** | **+1.44** — beats BTC B&H (1.24), ETH B&H (0.69), and equal-weight passive of same universe (1.37); IR +0.35 vs passive; MaxDD −87.9% (no crash overlay) |
 
 ---
 
