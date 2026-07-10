@@ -18,6 +18,7 @@ data/economic_cache/
 # Public artefacts that DO get committed
 !live/track_record/*.csv
 !reports/economic_dashboard.csv
+!.env.example
 
 # reports/technical/summary_table.csv is regenerable from run_all.py
 reports/technical/summary_table.csv

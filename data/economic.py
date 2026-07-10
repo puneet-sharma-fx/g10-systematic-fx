@@ -64,12 +64,15 @@ from pathlib import Path
 from typing import Literal, Optional
 
 import pandas as pd
+from dotenv import load_dotenv
 
 log = logging.getLogger(__name__)
 
 HERE = Path(__file__).resolve().parent
 CACHE_DIR = HERE / "economic_cache"
 CACHE_DIR.mkdir(exist_ok=True)
+
+load_dotenv(HERE.parent / ".env")
 
 Country  = Literal["US", "UK", "EA", "JP", "AU", "CA", "CH", "NZ", "SE", "NO"]
 Category = Literal["consumer", "inflation", "investment", "trade", "housing"]

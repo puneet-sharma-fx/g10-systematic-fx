@@ -7,11 +7,15 @@ from __future__ import annotations
 import os
 import logging
 from datetime import datetime
+from pathlib import Path
 
 import pandas as pd
 import yfinance as yf
+from dotenv import load_dotenv
 
 from config import G10_PAIRS, RATE_SERIES, VOL_REGIME
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 log = logging.getLogger(__name__)
 
