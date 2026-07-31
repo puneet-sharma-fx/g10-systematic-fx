@@ -7,6 +7,14 @@ Mid-frequency systematic FX strategy across the G10 universe — built end-to-en
 
 ---
 
+## Strategy scoreboard
+
+![Strategy scoreboard](reports/strategy_dashboard.png)
+
+*37 strategies tested (2010–2024, or as constrained by data) · 5 working · 2 borderline · 14 rejected · 12 timing-artefact (rate-diff family, per Strategy #21's verification) · 4 overlays/diagnostics. See [STRATEGIES.md](STRATEGIES.md) for the full audit trail with per-strategy caveats and citations. Regenerate the chart at any time via `python notebooks/strategy_dashboard.py`.*
+
+---
+
 ## Strategy
 
 A weekly-rebalanced cross-sectional long/short strategy on 9 G10 pairs. Three independent signals are cross-sectionally z-scored, weighted, then gated by a vol-regime filter. Positions are sized to a target portfolio volatility.
