@@ -66,6 +66,7 @@ STRATEGIES = [
     (36, "Crash filter overlay on #35",   "Overlays",          "rejected",        1.45),
     (37, "#35 robustness sweep (24 var)", "Rigour / diag",     "rigour",          1.35),   # median across grid
     (38, "Nifty 100 Low-Vol 30",          "India equity",      "working",         1.34),
+    (39, "US SPDR sector 12-1 mom",       "US equity",         "rejected",        0.65),
 ]
 
 # ── Colors and legend ────────────────────────────────────────────────────────

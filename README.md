@@ -11,7 +11,7 @@ Mid-frequency systematic FX strategy across the G10 universe — built end-to-en
 
 ![Strategy scoreboard](reports/strategy_dashboard.png)
 
-*37 strategies tested (2010–2024, or as constrained by data) · 5 working · 2 borderline · 14 rejected · 12 timing-artefact (rate-diff family, per Strategy #21's verification) · 4 overlays/diagnostics. See [STRATEGIES.md](STRATEGIES.md) for the full audit trail with per-strategy caveats and citations. Regenerate the chart at any time via `python notebooks/strategy_dashboard.py`.*
+*38 strategies tested (2010–2024, or as constrained by data) · 5 working · 2 borderline · 15 rejected · 12 timing-artefact (rate-diff family, per Strategy #21's verification) · 4 overlays/diagnostics. See [STRATEGIES.md](STRATEGIES.md) for the full audit trail with per-strategy caveats and citations. Regenerate the chart at any time via `python notebooks/strategy_dashboard.py`.*
 
 ---
 
@@ -112,6 +112,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | **36** ❌ | Crash filter overlay (VIX + self-momentum, same spec as #22/#29) applied to #35 — 2nd cross-spec test of the overlay's universality | **1.45** (vs base 1.44, IR **−0.64**) — MaxDD only +1.4pp; conditional Sharpe FAILS (base +1.03 on binding days). VIX and crypto crashes are decorrelated (2018 crypto winter = low VIX, 2022 crash = moderate VIX). Filter cuts exposure during drawdowns but keeps it off during recoveries. Skew improves (−0.07→+0.26) but cost prohibitive. 2nd failure of the overlay generalisation test (after #30). |
 | **37** ✅ | Parameter robustness sweep on #35 (6 lookbacks × 4 top-N = 24 backtests) — rigour check on the winning spec | **All 24 cells pass.** Sharpe range **+1.16 to +1.44**, median **+1.35**. 100% of cells above 1.0. Neighbours of baseline (60/90/120d × 2/3/4) all ≥ 1.16. Confirms the #35 win is NOT spec-lucky — the crypto momentum edge generalises across parameter choice. |
 | **38** ✅ | **Indian equities — Nifty 100 Low-Vol 30 (annual rebalance, long-only)** — first India strategy in the repo | **Net Sharpe 1.34** vs Nifty 50 B&H **0.71** (huge beat); CAGR 17.09% vs 10.75%; MaxDD −27.3% vs −38.4%. **3 of 4 pre-registered criteria pass.** ⚠ Caveats: universe is survivorship-biased (current Nifty 100 constituents); Sharpe is ~3× the doc's cited 0.47 (survivorship + favourable 2010-2024 sample); **IR vs equal-weight of same 98-ticker universe is −0.42** — the low-vol ranking adds little above naive equal-weighting. Source of alpha appears to be the size/equal-weight tilt vs cap-weighted Nifty 50, not the vol ranking itself. Still deployable as a defensive Indian equity vehicle; not a factor breakthrough. |
+| **39** ❌ | US SPDR sector 12-1 cross-sectional momentum (Jegadeesh-Titman on 11 sectors, monthly rebal) | **0.65** (vs SPY B&H **0.82**, EW sectors **0.74**) — loses to BOTH benchmarks. IR vs SPY −0.31, IR vs EW sectors −0.07. 5/5 sub-periods positive (regime-robust in level) but net drag vs cap-weighted SPY and even naive equal-weight. Post-2010 sector-momentum decay + mega-cap AI concentration (2023-24 SR 0.98 vs SPY 1.83) explain most of the shortfall. Only 2/4 pre-registered criteria pass. Same signal shape as #35 (worked on crypto, IR +0.35), opposite result on US sectors — sector momentum specifically is decayed in this era, not cross-sectional momentum broadly. |
 
 ---
 
