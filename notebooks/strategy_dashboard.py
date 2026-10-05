@@ -1,7 +1,7 @@
 """
 Strategy dashboard — single-PNG summary of every strategy in the repo.
 
-Groups all 38 strategies by asset class and status, produces a horizontal
+Groups every strategy by asset class and status, produces a horizontal
 bar chart of net Sharpes with color-coded status legend. Companion visual
 to STRATEGIES.md.
 
@@ -27,7 +27,7 @@ REPORTS = REPO / "reports"
 # Status : "working", "borderline", "rejected", "timing_artefact", "overlay",
 #          "rigour"
 STRATEGIES = [
-    # Rate-diff family (all flagged as timing artefact by #21)
+    # Rate-diff family — look-ahead confirmed by notebooks/fx_timestamp_audit.py
     (1,  "EURUSD Δ2Y-diff",               "FX (rate-diff)",    "timing_artefact", 2.75),
     (2,  "GBPUSD Δ2Y-diff",               "FX (rate-diff)",    "timing_artefact", 1.50),
     (3,  "AUDUSD Δ2Y-diff",               "FX (rate-diff)",    "timing_artefact", 1.22),
@@ -67,6 +67,14 @@ STRATEGIES = [
     (37, "#35 robustness sweep (24 var)", "Rigour / diag",     "rigour",          1.35),   # median across grid
     (38, "Nifty 100 Low-Vol 30",          "India equity",      "working",         1.34),
     (39, "US SPDR sector 12-1 mom",       "US equity",         "rejected",        0.65),
+    (40, "Dollar carry factor (DOL)",     "FX (portfolio)",    "rejected",        0.10),
+    (41, "Commodity→FX weekly",           "FX (portfolio)",    "rejected",       -0.28),
+    (42, "Crypto mom + risk layer",       "Crypto",            "working",         1.68),
+    (43, "Diversified TSMOM 25 ETFs",     "Cross-asset trend", "borderline",      0.29),
+    (44, "Business-cycle FX (CLI)",       "FX (portfolio)",    "borderline",      0.14),
+    (45, "FX value (REER)",               "FX (portfolio)",    "rejected",       -0.15),
+    (46, "FX carry+mom+value",            "FX (portfolio)",    "rejected",        0.05),
+    (47, "India 12-1 momentum",           "India equity",      "borderline",      1.42),
 ]
 
 # ── Colors and legend ────────────────────────────────────────────────────────

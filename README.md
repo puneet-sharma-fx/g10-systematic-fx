@@ -11,7 +11,7 @@ Mid-frequency systematic FX strategy across the G10 universe — built end-to-en
 
 ![Strategy scoreboard](reports/strategy_dashboard.png)
 
-*38 strategies tested (2010–2024, or as constrained by data) · 5 working · 2 borderline · 15 rejected · 12 timing-artefact (rate-diff family, per Strategy #21's verification) · 4 overlays/diagnostics. See [STRATEGIES.md](STRATEGIES.md) for the full audit trail with per-strategy caveats and citations. Regenerate the chart at any time via `python notebooks/strategy_dashboard.py`.*
+*47 strategies tested · 6 working · 5 borderline · 19 rejected · 12 look-ahead (rate-diff family, confirmed by the FX timestamp audit) · overlays/diagnostics. See [STRATEGIES.md](STRATEGIES.md) for the full audit trail with per-strategy caveats and citations. Regenerate the chart at any time via `python notebooks/strategy_dashboard.py`.*
 
 ---
 
@@ -60,9 +60,11 @@ A weekly-rebalanced cross-sectional long/short strategy on 9 G10 pairs. Three in
 
 For a one-page summary of every strategy with headline metrics, see [**`STRATEGIES.md`**](STRATEGIES.md).
 
-## ⚠️ Critical caveat (2026-06-12)
+## ⚠️ Critical finding — Yahoo FX timestamps (2026-10-01)
 
-**Strategy #21 (1-day-extra-lag rigour check on Strategy #1) collapsed the Sharpe from +2.75 to −0.58**, with signal correlation dropping from +0.27 to +0.028. The entire rate-diff family below (Strategies #1–#10, #12, #18) uses the same `d_diff` signal structure and almost certainly contains the same intraday timing leakage between FRED/ECB rate-close timestamps and Yahoo's 5pm ET FX close. Sharpes shown below are **historical-record artefacts, not deployable edges** until rebuilt with properly time-aligned data. The repo is in active reconstruction mode.
+Yahoo's daily FX close dated D is the price at ~00:00 UTC on D (NY evening of D-1), not NY close of D. Every strategy that paired it with same-day yields, oil or VIX was trading on the **same session** it claimed to predict. The rate-diff family (#1–#10, #12, #14, #18) is **confirmed look-ahead**: with FX correctly re-dated, core-4 net Sharpe goes from +2.42 to −0.63. Evidence and re-run: [`notebooks/fx_timestamp_audit.py`](notebooks/fx_timestamp_audit.py) → [`reports/fx_timestamp_audit.png`](reports/fx_timestamp_audit.png).
+
+New strategies (#40+) use [`backtest/common.py`](backtest/common.py): aligned FX, per-pair bps costs, carry accrual, despiked data, 2011–2024 in-sample with a 2025+ hold-out.
 
 ## Individual Strategies
 
@@ -72,24 +74,24 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 
 | # | Title | Apparent Net Sharpe |
 |---|---|---|
-| 1 ⚠ | Δ(EU 2Y − US 2Y) → next-day EURUSD (**verified timing artefact by #21**) | 2.75 → ⚠ |
-| 2 ⚠ | Δ(GB 2Y − US 2Y) → next-day GBPUSD (likely timing artefact) | 1.50 → ⚠ |
-| 3 ⚠ | Δ(AU 2Y − US 2Y) → next-day AUDUSD (likely timing artefact) | 1.22 → ⚠ |
-| 4 ⚠ | Δ(NZ 2Y − US 2Y) → next-day NZDUSD (likely timing artefact) | 0.92 → ⚠ |
-| 5 ⚠ | Δ(US 2Y − JP 2Y) → next-day USDJPY (likely timing artefact) | 1.44 → ⚠ |
-| 6 ⚠ | Δ(US 2Y − CA 2Y) → next-day USDCAD (likely timing artefact) | 2.06 → ⚠ |
+| 1 ❌ | Δ(EU 2Y − US 2Y) → next-day EURUSD (**look-ahead, confirmed by FX timestamp audit**) | 2.75 → ⚠ |
+| 2 ⚠ | Δ(GB 2Y − US 2Y) → next-day GBPUSD (look-ahead) | 1.50 → ⚠ |
+| 3 ⚠ | Δ(AU 2Y − US 2Y) → next-day AUDUSD (look-ahead) | 1.22 → ⚠ |
+| 4 ⚠ | Δ(NZ 2Y − US 2Y) → next-day NZDUSD (look-ahead) | 0.92 → ⚠ |
+| 5 ⚠ | Δ(US 2Y − JP 2Y) → next-day USDJPY (look-ahead) | 1.44 → ⚠ |
+| 6 ⚠ | Δ(US 2Y − CA 2Y) → next-day USDCAD (look-ahead) | 2.06 → ⚠ |
 | 7 | Δ(US 2Y − CH 2Y) → next-day USDCHF (never worked) | 0.00 |
 | 8 ⚠ | Δ(US 2Y − SE 2Y) → next-day USDSEK (timing + cost artefact) | 2.13 → ⚠ |
 | 9 | Δ(US 2Y − NO 2Y) → next-day USDNOK (deferred — NO 2Y data unavailable) | — |
-| **10** ⚠ | Vol-targeted rate-diff portfolio (likely timing artefact) | 2.70 → ⚠ |
+| **10** ⚠ | Vol-targeted rate-diff portfolio (look-ahead) | 2.70 → ⚠ |
 | 11 | Cross-sectional momentum portfolio (rejected — see [`strategies/rejected/`](strategies/rejected/)) | −0.34 |
-| **12** ⚠ | Calibrated rate-diff portfolio (likely timing artefact) | 2.73 → ⚠ |
+| **12** ⚠ | Calibrated rate-diff portfolio (look-ahead) | 2.73 → ⚠ |
 | 13 ⚠️ | CFTC positioning extreme + 21-DMA reversal (long+short, 30 trades) | −0.07 |
 | 14 ⚠ | Calibrated portfolio + 50-DMA trend filter (degrades signal + timing) | 1.59 → ⚠ |
 | 15 ❌ | EURUSD SMA20 + RSI(14) combo (rejected, 49 trades, 24.5% win) | −0.34 |
 | 16 ❌ | VIX spike → short USDJPY+USDCHF (rejected, safe-haven thesis broken) | −0.39 |
 | 17 ⚠ | Oil (WTI) → next-day USDCAD (verified timing artefact — see #19) | 3.96 → ⚠ |
-| **18** ⚠ | Equal-weight rate-diff portfolio (former headline, likely timing artefact) | 2.90 → ⚠ |
+| **18** ⚠ | Equal-weight rate-diff portfolio (former headline, look-ahead) | 2.90 → ⚠ |
 | 19 ✓ | Oil → USDCAD with 1-day extra lag (rigour check of #17) | −0.84 |
 | 20 ⚠ | Classical vol-normalised carry (LEVEL signal, Dupuy 2021 spec) | 0.07 |
 | **21** ✓ | **EURUSD rate-diff with 1-day extra lag (rigour check of #1 — the big finding)** | **−0.58** |
@@ -113,6 +115,14 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | **37** ✅ | Parameter robustness sweep on #35 (6 lookbacks × 4 top-N = 24 backtests) — rigour check on the winning spec | **All 24 cells pass.** Sharpe range **+1.16 to +1.44**, median **+1.35**. 100% of cells above 1.0. Neighbours of baseline (60/90/120d × 2/3/4) all ≥ 1.16. Confirms the #35 win is NOT spec-lucky — the crypto momentum edge generalises across parameter choice. |
 | **38** ✅ | **Indian equities — Nifty 100 Low-Vol 30 (annual rebalance, long-only)** — first India strategy in the repo | **Net Sharpe 1.34** vs Nifty 50 B&H **0.71** (huge beat); CAGR 17.09% vs 10.75%; MaxDD −27.3% vs −38.4%. **3 of 4 pre-registered criteria pass.** ⚠ Caveats: universe is survivorship-biased (current Nifty 100 constituents); Sharpe is ~3× the doc's cited 0.47 (survivorship + favourable 2010-2024 sample); **IR vs equal-weight of same 98-ticker universe is −0.42** — the low-vol ranking adds little above naive equal-weighting. Source of alpha appears to be the size/equal-weight tilt vs cap-weighted Nifty 50, not the vol ranking itself. Still deployable as a defensive Indian equity vehicle; not a factor breakthrough. |
 | **39** ❌ | US SPDR sector 12-1 cross-sectional momentum (Jegadeesh-Titman on 11 sectors, monthly rebal) | **0.65** (vs SPY B&H **0.82**, EW sectors **0.74**) — loses to BOTH benchmarks. IR vs SPY −0.31, IR vs EW sectors −0.07. 5/5 sub-periods positive (regime-robust in level) but net drag vs cap-weighted SPY and even naive equal-weight. Post-2010 sector-momentum decay + mega-cap AI concentration (2023-24 SR 0.98 vs SPY 1.83) explain most of the shortfall. Only 2/4 pre-registered criteria pass. Same signal shape as #35 (worked on crypto, IR +0.35), opposite result on US sectors — sector momentum specifically is decayed in this era, not cross-sectional momentum broadly. |
+| **40** ❌ | Dollar carry factor — time-series DOL (LRV 2014), first build on the aligned harness | **0.10** — 0/4 pre-registered criteria; two switches in 14 years (a long-USD regime bet); hold-out 2025+ SR −0.35 |
+| **41** ❌ | Commodity → commodity-FX weekly (copper→AUD, Brent→NOK, WTI→CAD) — clean re-test of #17's idea | **−0.28** — 0/4 criteria; all three legs negative; hold-out SR −1.05 |
+| **42** ✅ | **Crypto momentum #35 + vol-target + BTC 200-DMA regime** — risk layer | **1.68** — 4/4 criteria; MaxDD −88% → −43%; robust across 12-cell parameter sweep; hold-out +0.21 while bare #35 lost (−0.24) |
+| **43** ⚠️ | Diversified TSMOM on 25 ETFs (MOP 2012) | **0.29** — 3/4; crisis alpha +2.95% in SPY's worst months, corr −0.04 to SPY, hold-out +0.92. Diversifier |
+| **44** ⚠️ | Business-cycle FX (OECD CLI, CRS 2020) | **0.14** — 3/4; right sign, too weak |
+| **45** ❌ | FX value — 5y REER reversal (AMP 2013) | **−0.15** — 1/4 |
+| **46** ❌ | FX carry + momentum + value combined | **0.05** — 2/4; pillars diversify but each edge ≈ 0 |
+| **47** ⚠️ | India 12-1 momentum, Nifty 100 top-30 | **1.42** — 3/4; beats EW of own universe (IR +0.62) but fails hold-out (−0.40); survivorship-biased |
 
 ---
 
@@ -135,6 +145,7 @@ g10-systematic-fx/
 │   └── vol_regime/vol_regime.py    VIX-based exposure scalar
 │
 ├── backtest/
+│   ├── common.py                   Shared harness for #40+: aligned FX, bps costs, carry, stats, hold-out
 │   ├── costs.py                    Turnover-based bps cost model
 │   ├── metrics.py                  Sharpe, Sortino, max drawdown, Calmar, hit rate
 │   └── engine.py                   Walk-forward driver (3y train / 6m test, expanding)
