@@ -11,7 +11,7 @@ Mid-frequency systematic FX strategy across the G10 universe — built end-to-en
 
 ![Strategy scoreboard](reports/strategy_dashboard.png)
 
-*47 strategies tested · 6 working · 5 borderline · 19 rejected · 12 look-ahead (rate-diff family, confirmed by the FX timestamp audit) · overlays/diagnostics. See [STRATEGIES.md](STRATEGIES.md) for the full audit trail with per-strategy caveats and citations. Regenerate the chart at any time via `python notebooks/strategy_dashboard.py`.*
+*48 strategies tested · 6 working · 6 borderline · 19 rejected · 12 look-ahead (rate-diff family, confirmed by the FX timestamp audit) · overlays/diagnostics. See [STRATEGIES.md](STRATEGIES.md) for the full audit trail with per-strategy caveats and citations. Regenerate the chart at any time via `python notebooks/strategy_dashboard.py`.*
 
 ---
 
@@ -123,6 +123,7 @@ See [`strategies/README.md`](strategies/README.md) for the full list with result
 | **45** ❌ | FX value — 5y REER reversal (AMP 2013) | **−0.15** — 1/4 |
 | **46** ❌ | FX carry + momentum + value combined | **0.05** — 2/4; pillars diversify but each edge ≈ 0 |
 | **47** ⚠️ | India 12-1 momentum, Nifty 100 top-30 | **1.42** — 3/4; beats EW of own universe (IR +0.62) but fails hold-out (−0.40); survivorship-biased |
+| **48** ⚠️ | Short VIX futures (SVXY) only in contango — VIX/VIX3M filter, first volatility strategy | **0.63** — 4/4 criteria; MaxDD −95% → −66%, dodged the −83% Feb-2018 day; hold-out +0.60. Still 47% vol — needs sizing |
 
 ---
 

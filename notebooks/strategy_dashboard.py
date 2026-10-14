@@ -23,7 +23,7 @@ REPORTS = REPO / "reports"
 # ── Strategy scoreboard ──────────────────────────────────────────────────────
 # Fields: (#, short label, group, status, net_sharpe)
 # Groups : "FX (rate-diff)", "FX (portfolio)", "FX (TA)", "Cross-asset trend",
-#          "US equity", "Crypto", "India equity", "Overlays", "Rigour / diag"
+#          "US equity", "Crypto", "Volatility", "India equity", "Overlays", "Rigour / diag"
 # Status : "working", "borderline", "rejected", "timing_artefact", "overlay",
 #          "rigour"
 STRATEGIES = [
@@ -75,6 +75,7 @@ STRATEGIES = [
     (45, "FX value (REER)",               "FX (portfolio)",    "rejected",       -0.15),
     (46, "FX carry+mom+value",            "FX (portfolio)",    "rejected",        0.05),
     (47, "India 12-1 momentum",           "India equity",      "borderline",      1.42),
+    (48, "Short VIX in contango (SVXY)",  "Volatility",        "borderline",      0.63),
 ]
 
 # ── Colors and legend ────────────────────────────────────────────────────────
@@ -103,6 +104,7 @@ GROUP_ORDER = [
     "FX (TA)",
     "Cross-asset trend",
     "Crypto",
+    "Volatility",
     "US equity",
     "India equity",
     "Overlays",
