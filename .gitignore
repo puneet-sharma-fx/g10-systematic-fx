@@ -17,6 +17,20 @@ data/economic_cache/
 
 # Public artefacts that DO get committed
 !live/track_record/*.csv
+# Backtest daily records — committed only for working/borderline strategies
+!backtest_records/strategy_25_*.csv
+!backtest_records/strategy_28_*.csv
+!backtest_records/strategy_29_*.csv
+!backtest_records/strategy_33_*.csv
+!backtest_records/strategy_35_*.csv
+!backtest_records/strategy_37_*.csv
+!backtest_records/strategy_38_*.csv
+!backtest_records/strategy_42_*.csv
+!backtest_records/strategy_43_*.csv
+!backtest_records/strategy_44_*.csv
+!backtest_records/strategy_47_*.csv
+!backtest_records/strategy_48_*.csv
+!backtest_records/strategy_49_*.csv
 !reports/economic_dashboard.csv
 !.env.example
 

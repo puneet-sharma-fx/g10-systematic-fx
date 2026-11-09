@@ -1,5 +1,7 @@
 # Strategies
 
+> **📌 Frozen 2026-10-15 — historical record.** Not updated after Strategy #39. The single current index of every strategy and verdict is [`STRATEGIES.md`](../STRATEGIES.md). The rate-diff results here are confirmed look-ahead (see `notebooks/fx_timestamp_audit.py`). Daily CSVs are committed only for working/borderline strategies, in `backtest_records/`.
+
 Numbered, self-contained single-purpose strategies. Each is a standalone module with its own data layer, position rule, and reproducible script.
 
 > ## ⚠️ Critical caveat — Strategy #21 finding (2026-06-12)
@@ -135,13 +137,13 @@ Script: [`../notebooks/regression_all_pairs.py`](../notebooks/regression_all_pai
 
 ## Daily track-record CSVs
 
-For the three cleanest strategies (#1, #2, #6) the full daily time series is committed to [`../live/track_record/`](../live/track_record/) as auditable CSVs. Anyone can re-derive Sharpe / drawdown / hit-rate / equity curve from the raw numbers.
+For the three cleanest strategies (#1, #2, #6) the full daily time series is committed to [`../backtest_records/`](../backtest_records/) as auditable CSVs. Anyone can re-derive Sharpe / drawdown / hit-rate / equity curve from the raw numbers.
 
 | Strategy | CSV | Rows | Cols |
 |---|---|---|---|
-| #1 EURUSD | [`strategy_01_eurusd_track_record.csv`](../live/track_record/strategy_01_eurusd_track_record.csv) | 3,912 | 12 |
-| #2 GBPUSD | [`strategy_02_gbpusd_track_record.csv`](../live/track_record/strategy_02_gbpusd_track_record.csv) | 3,911 | 12 |
-| #6 USDCAD | [`strategy_06_usdcad_track_record.csv`](../live/track_record/strategy_06_usdcad_track_record.csv) | 3,911 | 12 |
+| #1 EURUSD | [`strategy_01_eurusd_track_record.csv`](../backtest_records/strategy_01_eurusd_track_record.csv) | 3,912 | 12 |
+| #2 GBPUSD | [`strategy_02_gbpusd_track_record.csv`](../backtest_records/strategy_02_gbpusd_track_record.csv) | 3,911 | 12 |
+| #6 USDCAD | [`strategy_06_usdcad_track_record.csv`](../backtest_records/strategy_06_usdcad_track_record.csv) | 3,911 | 12 |
 
 **Columns**: `date, base_2y_pct, quote_2y_pct, rate_diff_pp, d_diff_pp, <pair>_close, <pair>_return, position, gross_return, cost, net_return, cum_gross, cum_net`.
 
@@ -196,7 +198,7 @@ z_clipped[pair, t]= clip(z, −2, +2)                   # cap extreme positions
 - Compare against an equal-weight (1/N each long/short) benchmark to confirm the z-score weighting adds value
 
 **Script.** [`strat_10_g10_rate_diff_portfolio.py`](strat_10_g10_rate_diff_portfolio.py)
-**CSV.** [`../live/track_record/strategy_10_portfolio_core4_track_record.csv`](../live/track_record/strategy_10_portfolio_core4_track_record.csv)
+**CSV.** [`../backtest_records/strategy_10_portfolio_core4_track_record.csv`](../backtest_records/strategy_10_portfolio_core4_track_record.csv)
 
 **Calibrated version.** Strategy #12 below applies the ex-ante leverage scalar that actually hits the 10% vol target.
 
@@ -234,7 +236,7 @@ Average leverage scalar applied across the backtest: **2.19×** (consistent with
 **What the calibration adds for credibility.** The original Strategy #10 honestly flagged "realised vol came in at 5% vs the 10% target — needs ex-ante calibration." Strategy #12 ships the actual fix. The research trail now shows: built portfolio → diagnosed the under-leverage → fixed it with a no-look-ahead rolling calibration. That sequence is the credible version of "vol-targeted systematic strategy."
 
 **Script.** [`strat_12_g10_rate_diff_portfolio_calibrated.py`](strat_12_g10_rate_diff_portfolio_calibrated.py) (thin wrapper calling `strat_10.run(calibrate_leverage=True)`)
-**CSV.** [`../live/track_record/strategy_12_portfolio_calibrated_track_record.csv`](../live/track_record/strategy_12_portfolio_calibrated_track_record.csv)
+**CSV.** [`../backtest_records/strategy_12_portfolio_calibrated_track_record.csv`](../backtest_records/strategy_12_portfolio_calibrated_track_record.csv)
 
 ---
 
@@ -274,7 +276,7 @@ drop to 0 otherwise
 - **Cross-pair signal agreement** (only take a long EUR if rate-diff also wants short USD vs other pairs)
 
 **Script.** [`strat_14_g10_rate_diff_portfolio_trend_filtered.py`](strat_14_g10_rate_diff_portfolio_trend_filtered.py)
-**CSV.** [`../live/track_record/strategy_14_portfolio_trend_filtered_track_record.csv`](../live/track_record/strategy_14_portfolio_trend_filtered_track_record.csv)
+**CSV.** [`../backtest_records/strategy_14_portfolio_trend_filtered_track_record.csv`](../backtest_records/strategy_14_portfolio_trend_filtered_track_record.csv)
 
 ---
 
@@ -318,7 +320,7 @@ The question: **does the z-score / inverse-vol / concentration-cap machinery act
 **Why this finding strengthens the repo, not weakens it.** A reviewer reading the iteration trail (#10 → #12 → #14 → #18) sees: (1) build the obvious sophisticated version, (2) calibrate it properly, (3) test overlays that don't help, (4) test the boring baseline — and find the baseline wins. That sequence is exactly what good systematic research looks like. The repo isn't claiming the z-score version is best; it's documenting the journey and ending up at the empirically-strongest deployable version.
 
 **Script.** [`strat_18_g10_rate_diff_portfolio_equal_weight.py`](strat_18_g10_rate_diff_portfolio_equal_weight.py) (thin wrapper calling `strat_10.run(equal_weight=True, calibrate_leverage=True)`)
-**CSV.** [`../live/track_record/strategy_18_portfolio_equal_weight_track_record.csv`](../live/track_record/strategy_18_portfolio_equal_weight_track_record.csv)
+**CSV.** [`../backtest_records/strategy_18_portfolio_equal_weight_track_record.csv`](../backtest_records/strategy_18_portfolio_equal_weight_track_record.csv)
 
 ---
 
@@ -360,7 +362,7 @@ Strategy #19:   pos[t+1] = −sign(oil_return[t−1])    ← signal one full day
 **Sources & data.** Same as Strategy #17. WTI from yfinance `CL=F`. USDCAD from yfinance `USDCAD=X`.
 
 **Script.** [`strat_19_oil_usdcad_lagged_verification.py`](strat_19_oil_usdcad_lagged_verification.py)
-**CSV.** [`../live/track_record/strategy_19_oil_usdcad_lagged_track_record.csv`](../live/track_record/strategy_19_oil_usdcad_lagged_track_record.csv)
+**CSV.** [`../backtest_records/strategy_19_oil_usdcad_lagged_track_record.csv`](../backtest_records/strategy_19_oil_usdcad_lagged_track_record.csv)
 
 ---
 
@@ -405,7 +407,7 @@ Long USDCAD when oil fell today, short USDCAD when oil rose today. Held 1 tradin
 **Data sources.** WTI from yfinance `CL=F`. USDCAD from yfinance `USDCAD=X`. Both daily close.
 
 **Script.** [`strat_17_oil_usdcad.py`](strat_17_oil_usdcad.py)
-**CSV (returns + signal time series).** [`../live/track_record/strategy_17_oil_usdcad_track_record.csv`](../live/track_record/strategy_17_oil_usdcad_track_record.csv)
+**CSV (returns + signal time series).** [`../backtest_records/strategy_17_oil_usdcad_track_record.csv`](../backtest_records/strategy_17_oil_usdcad_track_record.csv)
 
 ---
 
@@ -470,8 +472,8 @@ Pair positioning is **sign-adjusted** to the pair direction: CFTC "long EUR" = "
 **Data sources.** CFTC TFF Leveraged Money positioning (downloaded via `data/cftc.py`, cached locally). FX from yfinance.
 
 **Script.** [`strat_13_cot_extreme_long_short.py`](strat_13_cot_extreme_long_short.py)
-**CSV (returns).** [`../live/track_record/strategy_13_cot_extreme_long_short_track_record.csv`](../live/track_record/strategy_13_cot_extreme_long_short_track_record.csv)
-**Trade log.** [`../live/track_record/strategy_13_cot_extreme_long_short_track_record_trades.csv`](../live/track_record/strategy_13_cot_extreme_long_short_track_record_trades.csv)
+**CSV (returns).** [`../backtest_records/strategy_13_cot_extreme_long_short_track_record.csv`](../backtest_records/strategy_13_cot_extreme_long_short_track_record.csv)
+**Trade log.** [`../backtest_records/strategy_13_cot_extreme_long_short_track_record_trades.csv`](../backtest_records/strategy_13_cot_extreme_long_short_track_record_trades.csv)
 
 ---
 

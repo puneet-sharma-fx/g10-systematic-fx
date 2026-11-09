@@ -31,7 +31,7 @@ logging.getLogger("yfinance").setLevel(logging.ERROR)
 
 REPO = Path(__file__).resolve().parent.parent
 REPORTS = REPO / "reports"
-TRACK = REPO / "live" / "track_record"
+TRACK = REPO / "backtest_records"
 CACHE = REPO / "data" / "cache" / "yf"
 YIELDS_CSV = REPO / "data" / "raw" / "tvc_2y_yields.csv"
 

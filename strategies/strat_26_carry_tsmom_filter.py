@@ -55,7 +55,7 @@ logging.basicConfig(level=logging.WARNING)
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 REPORTS = REPO / "reports"
-TRACK = REPO / "live" / "track_record"
+TRACK = REPO / "backtest_records"
 
 BASE_CSV = TRACK / "strategy_20_vol_normalised_carry_track_record.csv"
 

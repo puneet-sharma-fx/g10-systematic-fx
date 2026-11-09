@@ -87,7 +87,7 @@ logging.getLogger("yfinance").setLevel(logging.ERROR)
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 REPORTS = REPO / "reports"
-TRACK = REPO / "live" / "track_record"
+TRACK = REPO / "backtest_records"
 
 # ── Strategy parameters ─────────────────────────────────────────────────────
 VOL_LOOKBACK_DAYS = 252            # trailing 12M realised vol

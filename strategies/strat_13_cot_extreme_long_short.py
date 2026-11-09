@@ -45,7 +45,7 @@ logging.getLogger("yfinance").setLevel(logging.ERROR)
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 REPORTS = REPO / "reports"
-TRACK = REPO / "live" / "track_record"
+TRACK = REPO / "backtest_records"
 COT_CACHE = REPO / "data" / "raw" / "cftc_tff_cache.csv"
 
 sys.path.insert(0, str(REPO))

@@ -5,7 +5,7 @@ Strategies that were tested but did **not** show net positive Sharpe in the back
 Each rejected strategy still has:
 - A reproducible script (same conventions as `strategies/`)
 - Full equity-curve PNG in [`../reports/rejected/`](../../reports/rejected/)
-- A daily/weekly track-record CSV in [`../../live/track_record/rejected/`](../../live/track_record/rejected/)
+- A daily/weekly track-record CSV, written to `backtest_records/rejected/` when the script runs (not committed — rejected strategies' CSVs are regenerable)
 - Honest documentation of *why* it failed
 
 ---
@@ -96,8 +96,8 @@ Consistent with the broader negative findings:
 
 **Script.** [`strat_15_eurusd_sma_rsi_combo.py`](strat_15_eurusd_sma_rsi_combo.py)
 **Equity curve.** [`../../reports/rejected/strategy_15_eurusd_sma_rsi.png`](../../reports/rejected/strategy_15_eurusd_sma_rsi.png)
-**Track record CSV.** [`../../live/track_record/rejected/strategy_15_eurusd_sma_rsi_track_record.csv`](../../live/track_record/rejected/strategy_15_eurusd_sma_rsi_track_record.csv)
-**Trade log.** [`../../live/track_record/rejected/strategy_15_eurusd_sma_rsi_track_record_trades.csv`](../../live/track_record/rejected/strategy_15_eurusd_sma_rsi_track_record_trades.csv)
+**Track record CSV.** Not committed (rejected strategy) — re-run the script to regenerate it in `backtest_records/rejected/`.
+**Trade log.** Not committed (rejected strategy) — re-run the script to regenerate it in `backtest_records/rejected/`.
 
 ---
 
@@ -148,10 +148,10 @@ The first cross-asset macro test in the repo. The hypothesis was the textbook "f
 
 **Script.** [`strat_16_vix_safe_haven_short.py`](strat_16_vix_safe_haven_short.py)
 **Equity curve.** [`../../reports/rejected/strategy_16_vix_safe_haven.png`](../../reports/rejected/strategy_16_vix_safe_haven.png)
-**Track record CSV.** [`../../live/track_record/rejected/strategy_16_vix_safe_haven_track_record.csv`](../../live/track_record/rejected/strategy_16_vix_safe_haven_track_record.csv)
+**Track record CSV.** Not committed (rejected strategy) — re-run the script to regenerate it in `backtest_records/rejected/`.
 
 **Sources.** FX prices: yfinance `EURUSD=X` etc. No external rate data needed.
 
 **Script.** [`strat_11_g10_momentum_portfolio.py`](strat_11_g10_momentum_portfolio.py)
 **Equity curve.** [`reports/rejected/strategy_11_g10_momentum_portfolio.png`](../../reports/rejected/strategy_11_g10_momentum_portfolio.png)
-**Track-record CSV.** [`live/track_record/rejected/strategy_11_momentum_portfolio_track_record.csv`](../../live/track_record/rejected/strategy_11_momentum_portfolio_track_record.csv)
+**Track-record CSV.** Not committed (rejected strategy) — re-run the script to regenerate it in `backtest_records/rejected/`.

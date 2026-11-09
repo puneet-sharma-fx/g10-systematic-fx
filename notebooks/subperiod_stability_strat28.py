@@ -36,7 +36,7 @@ logging.basicConfig(level=logging.WARNING)
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 REPORTS = REPO / "reports"
-TRACK = REPO / "live" / "track_record"
+TRACK = REPO / "backtest_records"
 
 TRADING_DAYS = 252
 START = "2010-01-04"

@@ -23,7 +23,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 REPO = HERE.parent
-TRACK = REPO / "live" / "track_record"
+TRACK = REPO / "backtest_records"
 TRACK.mkdir(parents=True, exist_ok=True)
 
 
@@ -51,7 +51,7 @@ def main() -> None:
     )
 
     print("\n" + "=" * 60)
-    print("  All 3 CSVs exported to live/track_record/")
+    print("  All 3 CSVs exported to backtest_records/")
     print("=" * 60)
 
 

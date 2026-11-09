@@ -1,5 +1,7 @@
 # Plan: Cross-G10 Extension of the Rate-Differential Signal
 
+> **📌 Frozen 2026-10-15 — historical record.** Not updated after Strategy #39. The single current index of every strategy and verdict is [`STRATEGIES.md`](../STRATEGIES.md). The rate-diff results here are confirmed look-ahead (see `notebooks/fx_timestamp_audit.py`). Daily CSVs are committed only for working/borderline strategies, in `backtest_records/`.
+
 **Date**: May 2026 (original plan)
 **Status (2026-06-12)**: ⚠️ The entire rate-diff family was flagged as timing artefact by Strategy #21's verification of #1. The "extension" results below printed positive Sharpes but those Sharpes are likely data-alignment artefacts, not deployable edges. Repo is in active reconstruction mode pending properly time-aligned signals.
 

@@ -1,9 +1,8 @@
 # g10-systematic-fx
 
-Mid-frequency systematic FX strategy across the G10 universe — built end-to-end on **public-only data sources** (FRED, yfinance, CFTC) so the workflow is fully reproducible without a Bloomberg Terminal.
+A public-data systematic research lab: 48 pre-specified strategies across G10 FX, multi-asset trend, volatility, crypto, US and Indian equities, each tested net of costs and kept in the record whether it worked or not. Built entirely on **public data** (FRED, yfinance, CFTC, BIS, OECD) so every result is reproducible without a Bloomberg Terminal.
 
-**Stack:** Python · pandas · scipy · statsmodels · yfinance · FRED API · CFTC public reports
-**Status:** v1 backtest framework complete; live track record begins post-launch and is committed weekly to `live/track_record/track-record.csv`.
+**Stack:** Python · pandas · numpy · scipy · statsmodels · matplotlib · yfinance · FRED · CFTC
 
 ---
 
@@ -11,54 +10,19 @@ Mid-frequency systematic FX strategy across the G10 universe — built end-to-en
 
 ![Strategy scoreboard](reports/strategy_dashboard.png)
 
-*48 strategies tested · 6 working · 6 borderline · 19 rejected · 12 look-ahead (rate-diff family, confirmed by the FX timestamp audit) · overlays/diagnostics. See [STRATEGIES.md](STRATEGIES.md) for the full audit trail with per-strategy caveats and citations. Regenerate the chart at any time via `python notebooks/strategy_dashboard.py`.*
+*48 strategies tested · 3 working · 8 borderline · rejected and look-ahead artefacts kept in the record. **Every strategy, verdict and caveat: [STRATEGIES.md](STRATEGIES.md).** Regenerate the chart with `python notebooks/strategy_dashboard.py`.*
+
+## What works
+
+| # | Strategy | Net Sharpe | Status |
+|---|---|---|---|
+| **42** | Crypto cross-sectional momentum + vol-target + BTC 200-DMA regime | 1.68 | ✅ 4/4 criteria; MaxDD −43%; positive in the 2025+ hold-out |
+| **38** | India Nifty 100 low-vol 30 | 1.34 | ✅ Beats Nifty 50; survivorship-biased universe |
+| **47** | India 12-1 momentum, Nifty 100 top-30 | 1.42 | ⚠ Beats equal-weight in-sample; fails the hold-out |
+| **48** | Short VIX futures only in contango (VIX/VIX3M filter) | 0.63 | ⚠ 4/4 criteria but 47% vol — needs sizing |
+| **43** | Diversified TSMOM across 25 ETFs | 0.29 | ⚠ Diversifier: +2.95% in SPY's worst months |
 
 ---
-
-## Strategy
-
-A weekly-rebalanced cross-sectional long/short strategy on 9 G10 pairs. Three independent signals are cross-sectionally z-scored, weighted, then gated by a vol-regime filter. Positions are sized to a target portfolio volatility.
-
-| Pillar | Source | Signal |
-|---|---|---|
-| **Carry** (40%) | FRED — central-bank policy rates | Smoothed annualised rate differential (base − quote) |
-| **Momentum** (35%) | yfinance — daily FX spot | Dual-window time-series momentum (21d fast vs 63d slow) |
-| **COT positioning** (25%) | CFTC TFF — Leveraged Money | Hedge-fund / CTA net positioning, normalised by open interest |
-| **Vol regime** (gate) | yfinance / FRED — VIX | Step-function exposure scalar at the 80th and 95th VIX percentiles |
-
-**Universe:** EURUSD, GBPUSD, AUDUSD, NZDUSD, USDJPY, USDCAD, USDCHF, USDSEK, USDNOK
-**Rebalance:** Weekly (Friday close)
-**Position sizing:** Vol-targeted, top-3 long / bottom-3 short
-
----
-
-## v1 backtest result (2013–2024, walk-forward, net of 2 bps round-trip cost)
-
-![Equity Curve](reports/equity_curve.png)
-
-| Metric | Value |
-|---|---|
-| Annualised Return | +1.13% |
-| Annualised Vol | 11.13% |
-| Sharpe | 0.16 |
-| Sortino | 0.23 |
-| Max Drawdown | -28.08% |
-| Hit Rate | 49.68% |
-| Periods | 626 weekly |
-
-**Honest read of v1.** This is the baseline result before any signal-construction iteration. Each individual signal (carry, momentum, COT) prints near-zero Sharpe in isolation on this 9-pair universe — the framework is sound, but the naive signal definitions don't have edge in post-GFC G10 FX. The strategy performs well in trending USD regimes (2021, 2024 → Sharpe >1) and gets shredded in reversal years (2013, 2017, 2020). Tracking known gaps publicly so the next commits show the iteration trail.
-
-**Next iterations (in order):**
-- Vol-normalise carry: `(rate_diff) / σ_pair` instead of raw rate differential
-- Switch momentum to time-series rather than cross-sectional (9 pairs is too thin for cross-section)
-- Replace the binary VIX regime filter with a smooth scalar
-- Re-weight signals by realised IC rather than priors
-
----
-
-## Strategies index
-
-For a one-page summary of every strategy with headline metrics, see [**`STRATEGIES.md`**](STRATEGIES.md).
 
 ## ⚠️ Critical finding — Yahoo FX timestamps (2026-10-01)
 
@@ -66,150 +30,56 @@ Yahoo's daily FX close dated D is the price at ~00:00 UTC on D (NY evening of D-
 
 New strategies (#40+) use [`backtest/common.py`](backtest/common.py): aligned FX, per-pair bps costs, carry accrual, despiked data, 2011–2024 in-sample with a 2025+ hold-out.
 
-## Individual Strategies
-
-Numbered, self-contained single-purpose strategies that emerged from research adjacent to the main framework. Each is a standalone module under [`strategies/`](strategies/) with its own data layer, position rule, and reproducible script.
-
-See [`strategies/README.md`](strategies/README.md) for the full list with results, charts, and caveats.
-
-| # | Title | Apparent Net Sharpe |
-|---|---|---|
-| 1 ❌ | Δ(EU 2Y − US 2Y) → next-day EURUSD (**look-ahead, confirmed by FX timestamp audit**) | 2.75 → ⚠ |
-| 2 ⚠ | Δ(GB 2Y − US 2Y) → next-day GBPUSD (look-ahead) | 1.50 → ⚠ |
-| 3 ⚠ | Δ(AU 2Y − US 2Y) → next-day AUDUSD (look-ahead) | 1.22 → ⚠ |
-| 4 ⚠ | Δ(NZ 2Y − US 2Y) → next-day NZDUSD (look-ahead) | 0.92 → ⚠ |
-| 5 ⚠ | Δ(US 2Y − JP 2Y) → next-day USDJPY (look-ahead) | 1.44 → ⚠ |
-| 6 ⚠ | Δ(US 2Y − CA 2Y) → next-day USDCAD (look-ahead) | 2.06 → ⚠ |
-| 7 | Δ(US 2Y − CH 2Y) → next-day USDCHF (never worked) | 0.00 |
-| 8 ⚠ | Δ(US 2Y − SE 2Y) → next-day USDSEK (timing + cost artefact) | 2.13 → ⚠ |
-| 9 | Δ(US 2Y − NO 2Y) → next-day USDNOK (deferred — NO 2Y data unavailable) | — |
-| **10** ⚠ | Vol-targeted rate-diff portfolio (look-ahead) | 2.70 → ⚠ |
-| 11 | Cross-sectional momentum portfolio (rejected — see [`strategies/rejected/`](strategies/rejected/)) | −0.34 |
-| **12** ⚠ | Calibrated rate-diff portfolio (look-ahead) | 2.73 → ⚠ |
-| 13 ⚠️ | CFTC positioning extreme + 21-DMA reversal (long+short, 30 trades) | −0.07 |
-| 14 ⚠ | Calibrated portfolio + 50-DMA trend filter (degrades signal + timing) | 1.59 → ⚠ |
-| 15 ❌ | EURUSD SMA20 + RSI(14) combo (rejected, 49 trades, 24.5% win) | −0.34 |
-| 16 ❌ | VIX spike → short USDJPY+USDCHF (rejected, safe-haven thesis broken) | −0.39 |
-| 17 ⚠ | Oil (WTI) → next-day USDCAD (verified timing artefact — see #19) | 3.96 → ⚠ |
-| **18** ⚠ | Equal-weight rate-diff portfolio (former headline, look-ahead) | 2.90 → ⚠ |
-| 19 ✓ | Oil → USDCAD with 1-day extra lag (rigour check of #17) | −0.84 |
-| 20 ⚠ | Classical vol-normalised carry (LEVEL signal, Dupuy 2021 spec) | 0.07 |
-| **21** ✓ | **EURUSD rate-diff with 1-day extra lag (rigour check of #1 — the big finding)** | **−0.58** |
-| **22** 🛡️ | **Carry crash filter overlay (VIX + self-momentum) on #18** — Brunnermeier 2009 | **Sharpe flat (2.90→2.91), vol −17%, MaxDD −7%** |
-| **23** ❌ | Donchian/ATR breakout with trailing stop (core4, 60d/1.5 ATR/2.5 ATR) — TA-in-FX dead (Park-Irwin 2007) | **−0.18** |
-| **24a** ❌ | Classic Turtle Trading System 1 with last-loser filter (20d/10d/2N) — **filter dead-lock**, only 7 trades / 15y | **−0.01** (~flat) |
-| **24b** ❌ | Turtle System 1 without filter (pure 20d/10d/2N) — whipsaw graveyard, 689 trades, PF 0.87 | **−0.28** |
-| **25** ✓ | **Turtle System 1 on commodities + crypto** (Gold, Silver, Copper, Oil, NatGas, Soy, BTC, ETH) — validates implementation, isolates FX rejection to asset class | **+0.43** (PF 1.36, skew +0.82) |
-| **26a** ❌ | Carry-TSMOM filter overlay on #20 (soft, scale 0.5 when 12m carry < 0) | 0.01 (IR −0.18) |
-| **26b** ❌ | Carry-TSMOM filter overlay on #20 (hard, scale 0.0 when 12m carry < 0) | −0.06 (IR −0.18) |
-| **27** ❌ | 20/50 DMA crossover with 1 ATR stop below MA20 (core4 FX) — 5th TA-in-FX confirmation; least-bad of the family, PF 0.94, skew +0.17, 2:1 reward:risk per trade | **−0.09** |
-| **28** ✓ | **20/50 DMA crossover with 1 ATR stop on commodities + crypto** — companion to #27 on the same #25 universe; validates asset-class hypothesis across 2 spec families | **+0.42** (PF 1.47, skew +0.50) |
-| **29** 🛡️ | **Crash filter overlay (VIX + self-momentum) on #28** — first overlay in the repo to materially ADD Sharpe; all metrics improve simultaneously | **+0.51** (MaxDD −7.7pp, IR +0.14) |
-| **30** ❌ | Crash filter overlay (same spec) on #25 (Turtle base) — cross-spec test fails; overlay is base-specific, not universal | 0.41 (vs base 0.43, IR −0.23) |
-| **31** ❌ | Cross-sectional 5-day mean reversion on G10 FX (mirror image of #11 momentum, weekly rebalance) — 2nd-derivative test: neither direction works at 1-week horizon | **−0.19** (gross +0.08, cost drag 28%) |
-| **32** ❌ | Cross-sectional inflation-differential on G10 FX (Taylor rule, monthly rebalance) — first strategy to use new `data/economic.py` ingestion; falsifies cross-sectional Taylor-rule signal in post-GFC era | **−0.13** (gross same; signal "stuck" on structural CCY differences) |
-| **33** ⚠️ | SPY 200-DMA tactical allocation (Faber 2007) — first US-equity strategy in repo | **0.88** (vs SPY B&H 0.84) — wins on Sharpe by +0.04 but gives up 4.3pp/yr return; conditional Sharpe test FAILS |
-| **34** ❌ | Faber 5-asset GTAA (SPY, EFA, AGG, VNQ, GLD) — the "correct" Faber 2007 spec | **0.61** — loses to SPY B&H (−0.22), 60/40 (−0.29), and even equal-weight passive 5-asset (−0.10); definitive Faber-in-modern-data rejection |
-| **35** ✅ | **Crypto cross-sectional 3-month momentum on 10 majors** (BTC/ETH/SOL/BNB/ADA/DOGE/AVAX/LINK/DOT/XRP) — long top-3 EW, monthly rebal, 30 bps RT retail-crypto cost. **First clean directional win in the repo.** | **+1.44** — beats BTC B&H (1.24), ETH B&H (0.69), and equal-weight passive of same universe (1.37); IR +0.35 vs passive; MaxDD −87.9% (no crash overlay) |
-| **36** ❌ | Crash filter overlay (VIX + self-momentum, same spec as #22/#29) applied to #35 — 2nd cross-spec test of the overlay's universality | **1.45** (vs base 1.44, IR **−0.64**) — MaxDD only +1.4pp; conditional Sharpe FAILS (base +1.03 on binding days). VIX and crypto crashes are decorrelated (2018 crypto winter = low VIX, 2022 crash = moderate VIX). Filter cuts exposure during drawdowns but keeps it off during recoveries. Skew improves (−0.07→+0.26) but cost prohibitive. 2nd failure of the overlay generalisation test (after #30). |
-| **37** ✅ | Parameter robustness sweep on #35 (6 lookbacks × 4 top-N = 24 backtests) — rigour check on the winning spec | **All 24 cells pass.** Sharpe range **+1.16 to +1.44**, median **+1.35**. 100% of cells above 1.0. Neighbours of baseline (60/90/120d × 2/3/4) all ≥ 1.16. Confirms the #35 win is NOT spec-lucky — the crypto momentum edge generalises across parameter choice. |
-| **38** ✅ | **Indian equities — Nifty 100 Low-Vol 30 (annual rebalance, long-only)** — first India strategy in the repo | **Net Sharpe 1.34** vs Nifty 50 B&H **0.71** (huge beat); CAGR 17.09% vs 10.75%; MaxDD −27.3% vs −38.4%. **3 of 4 pre-registered criteria pass.** ⚠ Caveats: universe is survivorship-biased (current Nifty 100 constituents); Sharpe is ~3× the doc's cited 0.47 (survivorship + favourable 2010-2024 sample); **IR vs equal-weight of same 98-ticker universe is −0.42** — the low-vol ranking adds little above naive equal-weighting. Source of alpha appears to be the size/equal-weight tilt vs cap-weighted Nifty 50, not the vol ranking itself. Still deployable as a defensive Indian equity vehicle; not a factor breakthrough. |
-| **39** ❌ | US SPDR sector 12-1 cross-sectional momentum (Jegadeesh-Titman on 11 sectors, monthly rebal) | **0.65** (vs SPY B&H **0.82**, EW sectors **0.74**) — loses to BOTH benchmarks. IR vs SPY −0.31, IR vs EW sectors −0.07. 5/5 sub-periods positive (regime-robust in level) but net drag vs cap-weighted SPY and even naive equal-weight. Post-2010 sector-momentum decay + mega-cap AI concentration (2023-24 SR 0.98 vs SPY 1.83) explain most of the shortfall. Only 2/4 pre-registered criteria pass. Same signal shape as #35 (worked on crypto, IR +0.35), opposite result on US sectors — sector momentum specifically is decayed in this era, not cross-sectional momentum broadly. |
-| **40** ❌ | Dollar carry factor — time-series DOL (LRV 2014), first build on the aligned harness | **0.10** — 0/4 pre-registered criteria; two switches in 14 years (a long-USD regime bet); hold-out 2025+ SR −0.35 |
-| **41** ❌ | Commodity → commodity-FX weekly (copper→AUD, Brent→NOK, WTI→CAD) — clean re-test of #17's idea | **−0.28** — 0/4 criteria; all three legs negative; hold-out SR −1.05 |
-| **42** ✅ | **Crypto momentum #35 + vol-target + BTC 200-DMA regime** — risk layer | **1.68** — 4/4 criteria; MaxDD −88% → −43%; robust across 12-cell parameter sweep; hold-out +0.21 while bare #35 lost (−0.24) |
-| **43** ⚠️ | Diversified TSMOM on 25 ETFs (MOP 2012) | **0.29** — 3/4; crisis alpha +2.95% in SPY's worst months, corr −0.04 to SPY, hold-out +0.92. Diversifier |
-| **44** ⚠️ | Business-cycle FX (OECD CLI, CRS 2020) | **0.14** — 3/4; right sign, too weak |
-| **45** ❌ | FX value — 5y REER reversal (AMP 2013) | **−0.15** — 1/4 |
-| **46** ❌ | FX carry + momentum + value combined | **0.05** — 2/4; pillars diversify but each edge ≈ 0 |
-| **47** ⚠️ | India 12-1 momentum, Nifty 100 top-30 | **1.42** — 3/4; beats EW of own universe (IR +0.62) but fails hold-out (−0.40); survivorship-biased |
-| **48** ⚠️ | Short VIX futures (SVXY) only in contango — VIX/VIX3M filter, first volatility strategy | **0.63** — 4/4 criteria; MaxDD −95% → −66%, dodged the −83% Feb-2018 day; hold-out +0.60. Still 47% vol — needs sizing |
-
 ---
+
+## Methodology
+
+- **Pre-registration (#40+):** pass criteria are written into each script's docstring before the first run and never changed afterwards.
+- **Hold-out:** 2011–2024 in-sample decides the verdict; 2025+ is reported separately and never used to pick parameters.
+- **Timestamp discipline:** every signal must be observable before the trade's entry price. Yahoo FX is re-dated (see above); VIX (4:15pm close) is lagged a day against ETFs (4:00pm close).
+- **Costs:** per-pair bps for FX (EURUSD 4 … SEK/NOK 10), 10 bps for ETFs, 30 bps for crypto and Indian equities, charged on turnover.
+- **Rigour checks:** extra-lag tests, parameter sweeps, sub-period stability, benchmark and information-ratio tests against the obvious passive alternative.
 
 ## Repo structure
 
 ```
 g10-systematic-fx/
-├── config.py                       Universe, FRED series, signal weights, backtest params
-├── strategy.py                     G10SystematicFX class + run_full_backtest() entry point
-│
-├── data/
-│   ├── fetchers.py                 FRED (rates, VIX) + yfinance (FX spot)
-│   └── cftc.py                     CFTC COT zip downloader and parser
-│
-├── signals/
-│   ├── _base.py                    BaseSignal ABC + cross_section_zscore() helper
-│   ├── carry/carry.py              Rate-differential carry signal
-│   ├── momentum/momentum.py        Dual-window time-series momentum
-│   ├── sentiment/cot.py            CFTC speculator-positioning signal
-│   └── vol_regime/vol_regime.py    VIX-based exposure scalar
-│
+├── STRATEGIES.md               Index of every strategy + verdict (single source of truth)
+├── strategies/strat_NN_*.py    One standalone script per strategy
 ├── backtest/
-│   ├── common.py                   Shared harness for #40+: aligned FX, bps costs, carry, stats, hold-out
-│   ├── costs.py                    Turnover-based bps cost model
-│   ├── metrics.py                  Sharpe, Sortino, max drawdown, Calmar, hit rate
-│   └── engine.py                   Walk-forward driver (3y train / 6m test, expanding)
-│
-├── strategies/
-│   └── strat_01_eu_us_2y_diff_eurusd.py   Strategy #1: Δ(EU 2Y − US 2Y) → next-day EURUSD
-│
-├── notebooks/
-│   └── explore_2y_diff_vs_eurusd.py       Exploration regression behind Strategy #1
-│
-├── reports/                                Equity curves and result PNGs
-│
-├── live/track_record/
-│   └── track-record.csv            Weekly P&L log (committed every Friday post-launch)
-│
-├── pine/strategy.pine              Pine Script port for TradingView publishing
-└── tests/                          14 unit tests, no API key required
+│   ├── common.py               Shared harness for #40+: aligned FX, costs, carry, stats, hold-out
+│   └── engine.py, costs.py, metrics.py   Original v1 walk-forward engine
+├── data/                       FRED / yfinance / CFTC / economic-data fetchers
+├── signals/                    v1 signal library (carry, momentum, COT, vol regime)
+├── notebooks/                  Audits, sweeps, dashboard
+├── reports/                    Equity-curve and diagnostic PNGs
+├── backtest_records/           Daily return CSVs for working and borderline strategies
+├── live/                       Reserved for real paper-trading logs
+├── strategy.py, config.py      Original v1 multi-signal strategy
+└── tests/                      19 unit tests, no network or API key needed
 ```
-
----
 
 ## Setup
 
 ```bash
 pip install -r requirements.txt
 
-# Get a free FRED API key at https://fred.stlouisfed.org/docs/api/api_key.html
-export FRED_API_KEY=your_key_here
-
-# Run the full walk-forward backtest
-python strategy.py
-
-# Run unit tests (no API key needed — uses synthetic data)
-pytest
+python strategies/strat_42_crypto_momentum_risk_layer.py   # run any strategy
+python notebooks/fx_timestamp_audit.py                      # reproduce the timestamp finding
+pytest                                                      # unit tests (synthetic data)
 ```
 
----
+New strategies read FRED through its public CSV endpoint, so no API key is needed. The legacy scripts #1 and #21 still use `fredapi` and expect `FRED_API_KEY`.
 
-## Backtest methodology
+## Original v1 framework
 
-- **Walk-forward:** Expanding-window train/test split, 3 years training / 6 months testing per fold. The strategy can never see future data — train-set data is explicitly truncated at the window boundary inside `backtest/engine.py`.
-- **Transaction costs:** 2 bps round-trip applied on actual turnover (sum of absolute weight changes per period).
-- **Vol targeting:** Each pair sized inversely to its 21-day realised volatility, scaled to a 10% annualised portfolio target.
-- **Stress periods covered:** 2010 EU debt, 2013 taper tantrum, 2015 China devaluation, 2018 Q4, 2020 COVID, 2022 BOJ defence, 2023 SVB cluster.
-
----
+The repo began as one weekly G10 strategy (`strategy.py`): carry 40% + momentum 35% + CFTC positioning 25%, gated by a VIX regime filter, vol-targeted, walk-forward 2013–2024. Net Sharpe **0.16** ([`reports/equity_curve.png`](reports/equity_curve.png)). Each signal was near zero on its own, which led to the numbered single-purpose strategies above.
 
 ## Data sources
 
-- **FRED** — G10 short-rate series (Fed Funds, ECB DFR, BoE SONIA, OECD 3M for AUD/NZD/JPY/CAD/CHF/SEK/NOK), VIX
-- **yfinance** — G10 FX daily spot, VIX fallback
-- **CFTC** — Weekly Commitments of Traders, legacy futures-only report, downloaded from `cftc.gov/dea/newcot/`
+- **FRED** — US Treasury yields, OECD 3M interbank rates, OECD leading indicators, BIS real effective exchange rates, VIX, H.10 noon FX fixings
+- **yfinance** — FX spot, ETFs, crypto, NSE equities, VIX term structure
+- **TradingView (`tvDatafeed`)** — international 2Y government yields
+- **CFTC** — Commitments of Traders (TFF)
 
 Bloomberg is the production-grade equivalent used in professional treasury work; this repo runs entirely on public data.
-
----
-
-## Roadmap
-
-- [x] v1 backtest framework with carry / momentum / COT / vol-regime signals
-- [x] Walk-forward harness with realistic costs
-- [x] Unit-test coverage on signals + metrics
-- [ ] First full historical backtest (post-FRED-key setup)
-- [ ] Pine Script port for TradingView Pro+ live publishing
-- [ ] Live paper-trading track record (committed every Friday)
-- [ ] v2 enhancements: positioning-percentile reversal in COT, smooth vol-regime scalar

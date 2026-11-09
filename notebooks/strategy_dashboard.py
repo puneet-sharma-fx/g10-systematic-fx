@@ -47,16 +47,16 @@ STRATEGIES = [
     (17, "Oil → USDCAD",                  "FX (TA)",           "timing_artefact", 3.96),
     (18, "Portfolio equal-weight",        "FX (portfolio)",    "timing_artefact", 2.90),
     (19, "Oil → USDCAD +1d lag (verify)", "Rigour / diag",     "rigour",         -0.84),
-    (20, "Vol-normalised carry",          "FX (portfolio)",    "borderline",      0.07),
+    (20, "Vol-normalised carry",          "FX (portfolio)",    "rejected",        0.07),
     (21, "EURUSD +1d lag (verify)",       "Rigour / diag",     "rigour",         -0.58),
-    (22, "Carry crash filter overlay",    "Overlays",          "overlay",         2.91),  # applied to #18
+    (22, "Carry crash filter overlay",    "Overlays",          "rejected",       -0.66),  # base #18 was look-ahead; aligned value
     (23, "Donchian/ATR breakout",         "FX (TA)",           "rejected",       -0.18),
     (24, "Turtle System 1 (FX)",          "FX (TA)",           "rejected",       -0.28),  # 24b
-    (25, "Turtle on commods+crypto",      "Cross-asset trend", "working",         0.43),
+    (25, "Turtle on commods+crypto",      "Cross-asset trend", "borderline",      0.43),
     (26, "Carry-TSMOM overlay on #20",    "Overlays",          "rejected",        0.01),
     (27, "20/50 MA cross (FX)",           "FX (TA)",           "rejected",       -0.09),
-    (28, "20/50 MA cross (commods+crypto)","Cross-asset trend","working",         0.42),
-    (29, "Crash filter overlay on #28",   "Overlays",          "working",         0.51),
+    (28, "20/50 MA cross (commods+crypto)","Cross-asset trend","borderline",      0.42),
+    (29, "Crash filter overlay on #28",   "Overlays",          "borderline",      0.51),
     (30, "Crash filter overlay on #25",   "Overlays",          "rejected",        0.41),
     (31, "X-sec 5d MR (FX)",              "FX (TA)",           "rejected",       -0.19),
     (32, "Inflation-diff x-sec (FX)",     "FX (TA)",           "rejected",       -0.13),
@@ -76,6 +76,7 @@ STRATEGIES = [
     (46, "FX carry+mom+value",            "FX (portfolio)",    "rejected",        0.05),
     (47, "India 12-1 momentum",           "India equity",      "borderline",      1.42),
     (48, "Short VIX in contango (SVXY)",  "Volatility",        "borderline",      0.63),
+    (49, "Short-vol + TSMOM, 10% vol each","Volatility",        "borderline",      0.61),
 ]
 
 # ── Colors and legend ────────────────────────────────────────────────────────
@@ -92,7 +93,7 @@ STATUS_LEGEND = [
     ("working",          "Working (deployable prior)"),
     ("borderline",       "Borderline / caveated"),
     ("rejected",         "Rejected"),
-    ("timing_artefact",  "Timing artefact (rate-diff family, per #21)"),
+    ("timing_artefact",  "Look-ahead artefact (Yahoo FX timestamp)"),
     ("overlay",          "Overlay / risk filter"),
     ("rigour",           "Rigour check / diagnostic"),
 ]
@@ -202,7 +203,7 @@ def main() -> None:
     ax.set_title(
         f"g10-systematic-fx — strategy scoreboard  ·  {n} strategies · "
         f"{n_working} working, {n_borderline} borderline, {n_rejected} rejected, "
-        f"{n_timing} timing-artefact (rate-diff family), {n_overlay+n_rigour} overlays/diagnostics",
+        f"{n_timing} look-ahead artefacts, {n_overlay+n_rigour} rigour checks",
         fontsize=12, pad=14,
     )
 
@@ -214,7 +215,7 @@ def main() -> None:
               edgecolor="#ccc", title="Status", title_fontsize=9.5)
 
     fig.text(0.02, 0.005,
-             "Sharpes for the rate-diff family (#1–#10, #12, #18) are apparent — flagged as timing artefact by #21's +1d-lag verification. "
+             "Sharpes for the rate-diff family (#1–#10, #12, #18) are apparent — confirmed look-ahead by notebooks/fx_timestamp_audit.py. "
              "See STRATEGIES.md for the full audit trail and per-strategy caveats.",
              fontsize=8, color="#666", style="italic")
 

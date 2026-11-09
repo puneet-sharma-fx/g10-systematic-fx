@@ -1,8 +1,6 @@
 # Strategies Index
 
-A one-page index of every strategy tested in this repo, what was actually found, and where to look for the details. Sharpes are net of costs; #1–#39 use 2010–2024, #40+ use 2011–2024 in-sample with a 2025+ hold-out.
-
-For full per-strategy details: [`strategies/README.md`](strategies/README.md). For the original extension plan: [`strategies/PLAN.md`](strategies/PLAN.md).
+Every strategy tested in this repo, one line each, with its verdict. Sharpes are net of costs; #1–#39 use 2010–2024, #40+ use 2011–2024 in-sample with a 2025+ hold-out and pre-registered pass criteria. Full write-ups: [Strategy Details](#strategy-details-annotated-format) below (#20–#30 and notes for #21, #31–#48) and the frozen [`strategies/README.md`](strategies/README.md) (#1–#19).
 
 ---
 
@@ -16,106 +14,87 @@ So the legacy `pos[D] = sign(Δdiff[D-1])` earned the FX move over the *same* se
 
 ---
 
-## ❌ Rate-diff family (look-ahead, confirmed — see audit above)
+## ✅ Working (net Sharpe > 1, survives rigour checks)
 
-The original core finding was that **the change in 2Y rate differential predicts next-day FX**. Strategy #21 (1-day-extra-lag rigour check on Strategy #1) showed Sharpe collapses from +2.75 to −0.58 and signal correlation from +0.27 to +0.028. **All strategies below use the same `d_diff` signal structure and contain the same look-ahead between FRED/ECB rate-close timestamps and Yahoo's 5pm ET FX close.** Apparent Sharpes shown for historical record; not deployable at 5pm ET FX-close entry without proper time-aligned data.
-
-| # | Strategy | Period | Apparent Net Sharpe | Status |
+| # | Strategy | Period | Net SR | Verdict |
 |---|---|---|---|---|
-| **18** | Equal-weight rate-diff portfolio | 2010-2024 | 2.90 | ❌ Look-ahead (confirmed by audit) |
-| **1** | EURUSD: Δ(EU 2Y − US 2Y) → next-day EURUSD | 2010-2024 | 2.75 → ⚠ | **Verified by #21**: collapses to −0.58 with 1-day lag |
-| **12** | Calibrated rate-diff portfolio (core 4) | 2010-2024 | 2.73 | ❌ Look-ahead (confirmed by audit) |
-| **10** | Rate-diff portfolio (uncalibrated) | 2010-2024 | 2.70 | ❌ Look-ahead (confirmed by audit) |
-| **8** | USDSEK rate-diff (cost caveat) | 2012-2024 | 2.13 | ❌ Look-ahead + cost model artefact |
-| **6** | USDCAD rate-diff | 2010-2024 | 2.06 | ❌ Look-ahead (confirmed by audit) |
-| **14** | Calibrated portfolio + 50-DMA trend filter | 2010-2024 | 1.59 | ❌ Look-ahead (confirmed by audit) |
-| **2** | GBPUSD rate-diff | 2010-2024 | 1.50 | ❌ Look-ahead (confirmed by audit) |
-| **5** | USDJPY rate-diff (brutal −59% DD) | 2010-2024 | 1.44 | ❌ Look-ahead + DD |
-| **3** | AUDUSD rate-diff | 2010-2024 | 1.22 | ❌ Look-ahead (confirmed by audit) |
+| **42** | Crypto momentum (#35) + vol-target + BTC 200-DMA regime | 2015–24 | **1.68** | 4/4 criteria; MaxDD −88% → −43%; hold-out +0.21 — the deployable form of #35 |
+| **35** | Crypto 3M cross-sectional momentum, top-3 of 10 majors | 2015–24 | **1.44** | Robust (#37) but MaxDD −88% and hold-out 2025+ −0.24 — use #42 |
+| **37** | Robustness sweep of #35 (6 lookbacks × 4 top-N) | 2015–24 | 1.16–1.44 | All 24 cells > 1.0 — not parameter luck |
+| **38** | India Nifty 100 low-vol 30, annual rebalance | 2010–24 | **1.34** | Beats Nifty 50 but IR −0.42 vs equal-weight; survivorship-biased universe |
 
+## ⚠ Borderline (positive but not deployable as-is)
 
-## ✅ Working strategies (verified, net Sharpe > 1)
-
-| # | Strategy | Period | Net Sharpe | Notes |
+| # | Strategy | Period | Net SR | Verdict |
 |---|---|---|---|---|
-| **42** | **Crypto momentum #35 + vol-target (50%) + BTC 200-DMA regime** — the risk layer | 2015-2024 | **1.68** | **4/4 pre-registered criteria.** MaxDD −88% → **−43%**, Sharpe 1.44 → 1.68, Calmar 1.36 → 1.66, avg exposure 0.42. Each layer helps alone (vol-target SR 1.46 / MaxDD −67%; regime SR 1.57 / −75%). Sweep of DMA 100–250 × target 40–60%: all 12 cells SR 1.62–1.77, MaxDD −32% to −49%, hold-out positive. **Hold-out 2025+: SR +0.21, MaxDD −37% — while the unprotected #35 base lost (SR −0.24, MaxDD −76%).** |
-| **35** | Crypto cross-sectional 3-month momentum (10 majors, long-top-3 EW, monthly rebal) | 2015-2024 | **1.44** ⚠ hold-out 2025+ SR −0.24, MaxDD −76% — use #42 | **Beats every benchmark cleanly: BTC B&H (1.24), ETH B&H (0.69), and equal-weight passive of the same universe (1.37). IR vs EW passive +0.35 → the momentum tilt earns its keep above naive diversification.** Ann return 119.6% vs BTC 84.6% vs EW passive 107.9%. Cumulative excess over EW: +83pp. **Caveats:** MaxDD −87.9% (no risk overlay); edge concentrated in 2021 (Sharpe 3.38 vs EW 3.06) — much more marginal in 2019–20 recovery and 2023–24. Not a timing artefact (yfinance-only, no rate data). First clean directional win in the repo. **Robustness confirmed by #37.**
-| **37** | Parameter robustness sweep on #35 (6 lookbacks × 4 top-N = 24 backtests) | 2015-2024 | **min +1.16 / med +1.35 / max +1.44** | **All 24 cells of the (lookback × top-N) grid have net Sharpe > 1.0.** Sweep: LB ∈ {30, 60, 90, 120, 180, 252} × N ∈ {2, 3, 4, 5}. Baseline neighbours (60/90/120d × 2/3/4 = 9 cells) minimum Sharpe +1.16 — the baseline win at 1.44 is the peak of a broad plateau, not a spike. All four pre-registered pass criteria met (median ≥ 1.0, ≥50% cells > 1.0, neighbours ≥ 0.9, no negative cells). **Conclusively rules out overfit as the explanation for the #35 win.** The crypto cross-sectional momentum edge exists across the full grid, not just at one point.
-| **38** | **Indian equities — Nifty 100 Low-Vol 30 (annual rebalance, long-only)** — first India strategy in repo | 2010-2024 | **1.34** | **Net Sharpe 1.34 vs Nifty 50 B&H 0.71** (+0.63 delta); CAGR 17.09% vs 10.75%; MaxDD −27.3% vs −38.4% (+11pp better); Calmar 0.61. **3 of 4 pre-registered criteria pass.** ⚠ Two important caveats: (a) Universe is **survivorship-biased** — uses current Nifty 100 constituents, not point-in-time (doc's cited 0.47 Sharpe used proper point-in-time NSE data); (b) **IR vs equal-weight of same 98-ticker universe is −0.42** — equal-weight EARNS MORE (CAGR 19.79% vs 17.09%), and strategy Sharpe only wins by 0.08 (vs EW 1.26). This means the source of alpha is the size/equal-weight tilt vs cap-weighted Nifty 50, NOT the volatility ranking itself. Deployable as a defensive Indian large-cap vehicle; not a factor validation of low-vol. First strategy to use the newly-merged research/india_equities.md as literature basis.
+| **49** | Short-vol (#48) + TSMOM (#43), each sized to 10% vol | 2011–24 | 0.61 | 3/4; MaxDD −17%, hold-out +1.01; hedge fails in fast crashes. **60/40 + 20% TSMOM beats 60/40** (SR 1.11 vs 1.02, MaxDD −13% vs −21%) |
+| **47** | India 12-1 momentum, Nifty 100 top-30, quarterly | 2011–24 | 1.42 | Beats equal-weight (IR +0.62) but fails hold-out (−0.40); survivorship-biased |
+| **33** | SPY 200-DMA tactical allocation (Faber 2007) | 2010–24 | 0.88 | +0.04 vs buy-and-hold but −4.3pp/yr return; conditional test fails |
+| **48** | Short VIX futures (SVXY) only when VIX/VIX3M < 1 | 2011–24 | 0.63 | 4/4; MaxDD −95% → −66%; 47% vol — needs sizing |
+| **29** | Crash filter (VIX + self-momentum) on #28 | 2010–24 | 0.51 | Only overlay that adds Sharpe; MaxDD −7.7pp |
+| **25** | Turtle System 1 on commodities + crypto | 2010–24 | 0.43 | PF 1.36; edge is the BTC/ETH long side; `=F` roll-jump caveat |
+| **28** | 20/50 DMA cross + 1 ATR stop, commodities + crypto | 2010–24 | 0.42 | PF 1.47; same `=F` caveat |
+| **43** | Diversified TSMOM (Moskowitz-Ooi-Pedersen 2012), 25 ETFs | 2011–24 | 0.29 | 3/4; +2.95% in SPY's worst months; hold-out +0.92 — a diversifier |
+| **44** | Business-cycle FX (OECD CLI level, CRS 2020) | 2011–24 | 0.14 | 3/4; right sign, too weak |
 
-*No FX-directional strategy has survived correct timestamp alignment. #40 and #41 were the first FX tests built on the aligned harness; both rejected.*
+## ❌ Rejected
 
-## 🛡️ Risk overlays (deployable independent of base signal)
-
-| # | Overlay | Period | Effect on #18 base | Status |
+| # | Strategy | Period | Net SR | Why |
 |---|---|---|---|---|
-| **22** | Carry crash filter (VIX + self-momentum) — Brunnermeier-Nagel-Pedersen 2009 | 2010–2024 | Base #18 was look-ahead: aligned base SR −0.65, filtered −0.66 | ⚠ **Downgraded 2026-10-02** — never validated on a real base. Evidence for the overlay now rests on #29 (commodities+crypto, no Yahoo FX). |
+| **46** | FX carry + momentum + value, equal-weight (AMP 2013) | 2011–24 | 0.05 | 2/4; three ~zero edges average to ~zero |
+| **45** | FX value — 5y real-exchange-rate reversal | 2011–24 | −0.15 | 1/4; uncorrelated with carry but loses money |
+| **41** | Commodity → commodity-FX, weekly (copper/AUD, Brent/NOK, WTI/CAD) | 2011–24 | −0.28 | 0/4; all three legs negative |
+| **40** | Dollar carry factor — time-series DOL (LRV 2014) | 2011–24 | 0.10 | 0/4; a two-switch long-USD bet |
+| **39** | US sector 12-1 momentum (11 SPDRs) | 2010–24 | 0.65 | Loses to SPY (0.82) and equal-weight sectors (0.74) |
+| **36** | Crash filter on #35 | 2015–24 | 1.45 | IR −0.64; VIX doesn't time crypto crashes |
+| **34** | Faber 5-asset GTAA | 2010–24 | 0.61 | Loses to SPY, 60/40 and equal-weight passive |
+| **32** | Cross-sectional inflation differential, G10 FX | 2010–24 | −0.13 | Signal stuck on structural CPI gaps |
+| **31** | Cross-sectional 5-day mean reversion, G10 FX | 2010–24 | −0.19 | G10 FX is noise at a 1-week horizon |
+| **30** | Crash filter on #25 | 2010–24 | 0.41 | Removes good days; overlay doesn't generalise |
+| **27** | 20/50 DMA cross + 1 ATR stop, FX core-4 | 2010–24 | −0.09 | Least-bad TA-in-FX; PF 0.94 |
+| **26a/b** | Carry-TSMOM filter on #20 (soft / hard) | 2010–24 | 0.01 / −0.06 | IR −0.18 both |
+| **24a/b** | Turtle System 1 on FX (filter on / off) | 2010–24 | −0.01 / −0.28 | Filter dead-lock / whipsaw |
+| **23** | Donchian/ATR breakout, FX core-4 | 2010–24 | −0.18 | PF 0.60 |
+| **22** | Carry crash filter overlay on #18 | 2010–24 | — | Downgraded: its base was look-ahead (aligned −0.65) |
+| **20** | Vol-normalised carry (Dupuy 2021) | 2010–24 | 0.07 | Post-2008 carry decay (previously listed as borderline) |
+| **16** | VIX spike → short USDJPY + USDCHF | 2011–24 | −0.39 | Safe-haven thesis broken; aligned −0.65 |
+| **15** | EURUSD SMA20 + RSI(14) | 2010–24 | −0.34 | 24.5% win rate |
+| **13** | CFTC positioning extremes + 21-DMA reversal | 2010–24 | −0.07 | Only the short side works; aligned −0.01 |
+| **11** | G10 FX cross-sectional momentum | 2010–24 | −0.34 | Negative at every lookback |
+| **7** | USDCHF Δ2Y rate-diff | 2010–24 | 0.00 | SNB peg + safe-haven flows |
+| **9** | USDNOK Δ2Y rate-diff | — | — | Deferred (no NO 2Y data); moot now |
+| **Sweep** | 15 classic TA indicators × 3 majors | 2010–24 | best 0.14 | None deployable (Park-Irwin 2007) |
 
-## ⚠ Borderline (Sharpe 0–1)
+## ❌ Look-ahead artefacts — Yahoo FX timestamp (apparent Sharpes, not real)
 
-| # | Strategy | Period | Net Sharpe | Notes |
+| # | Strategy | Apparent SR | Aligned SR | Note |
 |---|---|---|---|---|
-| **48** | **Short VIX futures (SVXY) only in contango** — VIX/VIX3M < 1 at D−1 close, else cash; first volatility strategy | 2011-2024 | **0.63** | 4/4 pre-registered criteria, but borderline by repo standard (< 1). MaxDD −95% (SVXY B&H) → −66%; avoided the −83% day of 6-Feb-2018 but took the −32% day before; took −21% on 5-Aug-2024. 93% time in market, 12 switches/yr, vol 47%, skew −1.42. Hold-out SR +0.60. **Same-day VIX (15-min look-ahead, VIX closes 4:15pm) would show 0.82** — timing discipline costs 0.19 Sharpe. Below SPY (0.94) on Sharpe; needs sizing before use. |
-| **43** | Diversified TSMOM (Moskowitz-Ooi-Pedersen 2012) on 25 ETFs — equity, bonds, commodities, FX; 40% instrument vol, monthly | 2011-2024 | **0.29** | 3/4 criteria — misses SR > 0.4. **Crisis alpha +2.95% in SPY's worst-decile months**, corr with SPY −0.04, all four asset classes contribute (SR 0.12–0.26 each), hold-out SR +0.92. A diversifier, not a standalone. ETFs used because Yahoo `=F` futures carry fake roll jumps. |
-| **44** | Business-cycle differential FX (OECD CLI level, Colacito-Riddiough-Sarno 2020), 6 ccys, monthly | 2011-2024 | **0.14** | 3/4 criteria — misses SR > 0.3. Right sign in 3/4 regimes, not stuck (max same-leg 49%), hold-out SR +0.48, IR +0.49 vs passive. Too weak to use; CLI is latest-vintage (mildly optimistic). Only 6 economies still published. |
-| **47** | India 12-1 momentum, Nifty 100 top-30, quarterly, long-only | 2011-2024 | **1.42** | 3/4 criteria. Beats Nifty (0.67) and — unlike #38 — **beats equal-weight of its own universe (IR +0.62)**; all 4 sub-periods > 1.2. **Fails hold-out: 2025+ SR −0.40 vs EW +0.25.** Survivorship bias (current constituents) flatters momentum most of all — needs point-in-time constituents before any trust. |
-| **4** | NZDUSD rate-diff | 2016-2024 | 0.92 | NZ data starts 2016, shorter sample |
-| **25** | Turtle System 1 (no filter) on commodities + crypto (8 instruments, vol-targeted) | 2010-2024 | **0.43** | **Profit factor 1.36, daily skew +0.82.** Same code as #24b but cross-asset shift to its native habitat. BTC alone PF 2.93, ETH PF 2.49 (max win +300%). Long avg +2.70% vs short avg −0.67% — long side carries the edge. Validates implementation; isolates FX rejection to that asset class. |
-| **28** | 20/50 DMA crossover with 1 ATR stop on commodities + crypto (8 instruments, vol-targeted) | 2010-2024 | **0.42** | **Profit factor 1.47, daily skew +0.50.** Same code as #27 but cross-asset shift. BTC PF 2.96, ETH PF 3.30 (max win +281%). Long avg +3.08% / short avg −0.47%. Validates the asset-class hypothesis across BOTH MA-crossover and Turtle spec families. |
-| **29** | Crash filter overlay (VIX + self-momentum) on #28 | 2010-2024 | **0.51** | **First overlay in the repo to materially add Sharpe.** All metrics improve simultaneously: Sortino 0.63 → 0.75, MaxDD −26.84% → −19.15% (−7.7pp), Calmar 0.17 → 0.26, skew +0.50 → +0.62, ann ret +4.58% → +5.00%. IR +0.14. Conditional Sharpe test: on the 1,455 binding days, base earns −0.08, filtered earns +0.09 — filter is removing bad days specifically. |
-| **33** ⚠️ | SPY 200-DMA tactical allocation (Faber 2007) — first US-equity strategy | 2010-2024 | 0.88 (vs B&H 0.84) | **Borderline. Sharpe marginally better than buy-and-hold (+0.04), but the rule sacrifices 4.3pp/yr return and 47% of cumulative wealth.** MaxDD genuinely shrinks (−33.7% → −20.7%, +13pp). Calmar wins (+0.06). BUT **conditional Sharpe test FAILS**: on out-of-market days SPY would have earned +0.71 Sharpe — the rule sits out positive periods, not negative ones. Daily skew worsens (−0.52 → −0.81). Faber's 1972-2005 published edge has decayed in the post-GFC structural-bull regime. |
-| **20** | Classical vol-normalised carry (Dupuy 2021 spec, monthly) | 2010-2024 | 0.07 | Confirms post-2008 carry decay; LEVEL signal nearly dead in this era |
+| **18** | Equal-weight rate-diff portfolio, core-4 | 2.90 | −0.63 | Former headline |
+| **1** | EURUSD Δ(EU 2Y − US 2Y) | 2.75 | +0.01 | #21's lagged test: −0.58 |
+| **12** | Calibrated rate-diff portfolio | 2.73 | — | Same signal as #18 |
+| **10** | Vol-targeted rate-diff portfolio | 2.70 | — | Same signal as #18 |
+| **8** | USDSEK | 2.13 | −0.77 | Also a pip-cost artefact |
+| **6** | USDCAD | 2.06 | −0.46 | |
+| **14** | Calibrated portfolio + 50-DMA filter | 1.59 | — | |
+| **2** | GBPUSD | 1.50 | −0.57 | |
+| **5** | USDJPY | 1.44 | −0.54 | |
+| **3** | AUDUSD | 1.22 | −0.51 | |
+| **4** | NZDUSD (previously listed as borderline) | 0.92 | −0.65 | |
+| **17** | Oil (WTI) → next-day USDCAD | 3.96 | −0.84 (#19) | Same mechanism |
 
-## ❌ Failed / rejected / inconclusive
+## 🔬 Rigour checks and diagnostics
 
-| # | Strategy | Net Sharpe | Why it failed |
-|---|---|---|---|
-| **45** ❌ | FX value — 5y real-exchange-rate reversal (AMP 2013, BIS REER), 10 ccys, monthly | −0.15 | 1/4 criteria. Uncorrelated with carry (+0.02) as hoped, but loses money; −1.30 in 2022-24. |
-| **46** ❌ | FX carry + momentum + value equal-weight (AMP 2013) | 0.05 | 2/4 criteria. Pillars are diversifying (value/momentum −0.40) but three near-zero edges average to near zero. Hold-out +0.66 on 1.3% vol. Closes the classic FX factor set. |
-| **40** ❌ | Dollar carry factor — time-series DOL (Lustig-Roussanov-Verdelhan 2014), monthly, aligned FX + carry | 0.10 | 0/4 pre-registered criteria. Only 2 direction switches in 14y — effectively a long-USD regime bet (IR −0.24 vs passive long USD). Hold-out 2025+ SR −0.35. |
-| **41** ❌ | Commodity → commodity-FX, weekly (copper→AUD, Brent→NOK, WTI→CAD), aligned FX + carry | −0.28 | 0/4 criteria. All three legs negative (AUD −0.42, NOK −0.10, CAD −0.05). Hold-out SR −1.05. The clean re-test of #17's idea — no lagged edge. |
-| **39** ❌ | US SPDR sector 12-1 momentum (Jegadeesh-Titman on 11 sectors, long-top-3 EW, monthly) | 2010-2024 | **0.65** | **Rejected — loses to both benchmarks.** SPY B&H Sharpe 0.82, EW sectors 0.74. IR vs SPY −0.31, IR vs EW sectors −0.07. Only 2 of 4 pre-registered criteria pass (SR > 0.5 ✓, 5/5 sub-periods positive ✓; beats SPY ✗, IR vs EW > 0.20 ✗). Sub-period detail: strategy wins the 2021-22 inflation regime (+0.74 vs SPY +0.23) but loses catastrophically in 2023-24 AI/hike regime (+0.98 vs SPY +1.83) — mega-cap concentration in AI winners killed diversified sector rotation. Same signal shape as #35 (worked on crypto with IR +0.35 vs EW), opposite outcome on US sectors — **sector momentum specifically is decayed in the post-2010 US market**, not cross-sectional momentum as a class. Consistent with the "factor crowding + mega-cap AI concentration" thesis in the quant literature. First cited use of research/fx_signals_advanced.md's cross-sectional momentum framework outside FX.
-| **36** ❌ | Crash filter overlay (VIX + self-momentum, same spec as #22/#29) on #35 | 2015-2024 | 1.45 (vs base 1.44, IR **−0.64**) | **Second cross-spec rejection of the VIX overlay** (after #30 on Turtle). MaxDD only +1.4pp better. **Conditional Sharpe test FAILS**: on the 1,377 binding days (38% of sample), base #35 earned +1.03 Sharpe, filtered dropped to +0.81 — filter removed GOOD days, not bad ones. VIX and crypto crashes are decorrelated: 2018 crypto winter = low VIX; 2022 crypto crash = moderate VIX (rate-hike environment, not equity panic). Sub-period damage: 2018 −0.40, 2022 −0.52. Silver lining: skew flipped −0.07 → +0.26. Deployment rule now doubly confirmed: apply the VIX+self-mom overlay only to bases where conditional-Sharpe binding-day return is negative. |
-| **30** ❌ | Crash filter overlay (same spec) on #25 (Turtle base) | 2010-2024 | 0.41 (vs base 0.43) | **Cross-spec test FAILS — overlay doesn't generalise.** IR −0.23, Sharpe −0.02, Sortino −0.07, skew +0.82 → +0.30 (−0.52). MaxDD does improve (−7.3pp) but at the cost of returns (−1.31pp). Conditional Sharpe test: base earns +0.19 on binding days, filtered +0.00 — filter removes GOOD days, opposite to #29. Turtle's edge is vol-positive (breakouts during high-vol periods); MA-cross's edge isn't. Overlay is base-specific, not universal. |
-| **31** ❌ | Cross-sectional 5-day mean reversion on G10 FX (long bottom-2 losers, short top-2 winners, weekly rebalance) | 2010-2024 | −0.19 | **The cleanest falsification of "FX is exploitable at the weekly horizon."** Mirror image of #11 (momentum, Sharpe −0.34). If #11 lost because of mean reversion, #31 should have won. It didn't. **Therefore G10 FX is neither trending nor mean-reverting at 1-week horizon — just noise.** Gross Sharpe +0.08 (tiny MR effect exists), but 28.45% cumulative cost drag destroys it. Daily skew +0.25 (proper MR signature, but doesn't pay). 6th independent TA-in-FX confirmation. |
-| **32** ❌ | Cross-sectional inflation-differential momentum on G10 FX (Taylor rule, monthly rebalance) | 2010-2024 | −0.13 | **First strategy in repo to USE the new `data/economic.py` ingestion layer.** Long top-3 currencies / short bottom-3 by CPI YoY differential vs US. Net Sharpe −0.13, gross Sharpe −0.13 (NOT a cost problem — cost drag only 0.27%). Signal "gets stuck": AU/NZ long 99%/92% of days, CHF short 98% — driven by **structural** inflation differences across countries, not **dynamic** Taylor-rule responses. Falsifies the cross-sectional reading of Molodtsova-Papell (2009) on post-GFC data. 7th independent TA-on-FX confirmation. |
-| **34** ❌ | Faber 5-asset GTAA (SPY, EFA, AGG, VNQ, GLD) — the "correct" full Faber 2007 spec | 2010-2024 | 0.61 | **The definitive Faber-in-modern-data rejection.** Loses to ALL THREE benchmarks: −0.22 vs SPY B&H, −0.29 vs 60/40, and **−0.10 even vs the equal-weight passive 5-asset portfolio** (same universe, just held). Ann return only +3.80% vs SPY's +13.80% and 60/40's +9.20%. MaxDD genuinely tiny (−10.9%) but at massive return cost. Conditional Sharpe test fails: EW-5 passive earned +0.59 on days strategy was <50% invested vs strategy's −0.10. Diversification doesn't rescue the timing signal — it spreads the same wrong-side-of-market bias across 5 assets. Faber's 1972-2005 edge is dead in the post-GFC low-vol structural bull. |
-| **7** | USDCHF rate-diff | 0.00 | SNB peg break 2015 + safe-haven flows override rates |
-| **11 ❌** | Cross-sectional momentum portfolio (rejected) | −0.34 | Post-GFC FX momentum decay; confirmed at 21/63/126/252 lookbacks |
-| **13 ⚠** | CFTC positioning ±2σ + 21-DMA reversal (long+short) | −0.07 | Asymmetric: short 40% win ✓, long 30% win ✗ |
-| **9** | USDNOK rate-diff (deferred) | — | TVC has no NO 2Y data; deferred to Norges Bank API |
-| **Tech sweep ⚠** | 15 classic technical indicators × 3 majors | best +0.14 | None deployable; consistent with Park-Irwin 2007 |
-| **15** ❌ | EURUSD SMA20 + RSI(14) combo (long-only) | −0.34 | 49 trades, 24.5% win rate. Classic confluence doesn't work on liquid EURUSD |
-| **16** ❌ | VIX spike → safe-haven short (USDJPY + USDCHF) | −0.39 | Safe-haven thesis empirically broken in JPY carry-trade era + post-SNB CHF |
-| **17** ⚠ | Oil (WTI) → next-day USDCAD (timing artefact) | 3.96 → ⚠ | Verified by #19: collapses to −0.84 with 1-day extra lag. Captures intraday WTI-USDCAD response in Yahoo close-time gap. Not tradable real-time. |
-| **19** ✓ | Oil → USDCAD with 1-day lag (rigour check) | −0.84 | Verification of #17 — confirms it was timing artefact. Signal correlation collapses from −0.16 to ~0. |
-| **21** ✓ | EURUSD rate-diff with 1-day lag (rigour check) | −0.58 | **The most important verification in the repo.** Confirms #1's edge was timing artefact; entire rate-diff family flagged. Signal corr collapses from +0.27 to +0.028. |
-| **23** ❌ | Donchian/ATR breakout with trailing stop (core4, 60d/1.5 ATR/2.5 ATR) | −0.18 | **Third independent confirmation of TA-in-FX dead** (after #11 momentum and the 15-indicator tech sweep). 23 trades over 15 years, 34.8% win rate, profit factor 0.60. Daily skew −2.13 (single-day stop hits dominate). EURUSD alone profitable (4 trades, PF 7.84); GBPUSD chopped (PF 0.16). NOT a timing artefact — uses only FX OHLC. Consistent with Park-Irwin 2007. |
-| **24a** ❌ | Canonical Turtle System 1 (20d entry / 10d exit / 2N stop / last-loser filter) | −0.01 | **Filter dead-lock pathology.** Only 7 trades over 15 years (filter froze the strategy after each winner). 57% win rate, profit factor 1.02. Avg gross exposure 0.6% — strategy is essentially "do nothing." |
-| **24b** ❌ | Turtle System 1 without filter (pure 20d/10d/2N) | −0.28 | **Whipsaw graveyard.** 689 trades over 15 years (11/pair/year), 34.7% win rate, profit factor 0.87. Active losses from chop, MaxDD −28.5%. Confirms classical Turtle parameters do not extract edge from G10 FX. |
-| **26a** ❌ | Carry-TSMOM filter overlay on #20 (12m lookback, soft scale 0.5) | 0.01 (vs base 0.07) | **Rejected.** IR −0.18, vol −1.1pp, MaxDD −2.1pp, skew −0.16. The Moskowitz-Ooi-Pedersen TSMOM rescue requires base trend-following content in P&L path; #20 has Sharpe 0.07 so trailing-12m sign is noise. Filter activates 52.5% of months but destroys rather than adds value. |
-| **26b** ❌ | Carry-TSMOM filter overlay on #20 (12m lookback, hard scale 0.0) | −0.06 (vs base 0.07) | **Rejected.** Same IR −0.18 as soft variant; goes fully flat 52.5% of months. Hit rate collapses 52% → 22% (no return earned during off-months). Same conclusion: post-2008 carry decay isn't fixable by simple TSMOM. |
-| **27** ❌ | 20/50 DMA crossover with 1 ATR stop below MA20 (core4 FX) | −0.09 | **Rejected, but the LEAST BAD TA-in-FX result so far.** 351 trades, 31.6% win rate, profit factor 0.94, daily skew **+0.17** (proper trend-follower signature!). Avg win/loss ratio 2:1 (+2.35% / −1.16%). 5th independent TA-in-FX confirmation. Per-pair PF: GBPUSD 1.13, AUDUSD 1.12 (borderline), EURUSD 0.69, USDCAD 0.80. Almost works on cost — 4.05% cumulative cost drag is the main hurdle. |
+| Check | What it shows |
+|---|---|
+| **#19** Oil → USDCAD with 1-day lag | Confirmed #17 as a timing artefact (−0.84) |
+| **#21** EURUSD rate-diff with 1-day lag | −0.58 — turned out to be the correctly aligned test |
+| [`notebooks/fx_timestamp_audit.py`](notebooks/fx_timestamp_audit.py) | Yahoo FX close is dated a day late; rate-diff family re-run on aligned FX |
+| [`notebooks/aligned_recheck.py`](notebooks/aligned_recheck.py) | #13 #16 #20 #22 #26 #32 on aligned FX — no verdict changes; #22 downgraded |
+| Signal-IC regressions, sub-period stability, momentum lookback sweep, 2Y-diff scatter | Rate-diff-era diagnostics (`notebooks/`) — superseded by the audit |
 
-## 🔬 Supporting analyses (diagnostics & rigour checks)
+## 📊 Backtest records
 
-| Artefact | What it shows | Verdict |
-|---|---|---|
-| **Signal-IC regression** (`notebooks/regression_all_pairs.py`) | β, R², t-stat per pair for next-day FX ~ Δrate-diff | All 8 βs positive, t-stats 6.3 – 17.5 |
-| **Sub-period stability** (`notebooks/subperiod_stability.py`) | Sharpe across ZIRP/Divergence/COVID/Hiking regimes | Signal strongest when rates are most active |
-| **Momentum lookback sweep** (`notebooks/explore_momentum_lookbacks.py`) | Cross-sectional MOM at 21/63/126/252 days | Negative at every horizon |
-| **2Y diff scatter** (`notebooks/explore_2y_diff_vs_eurusd.py`) | EURUSD: β = +0.0335, R² = 7.5% | Strong, UIP-consistent |
-
-## 📊 Public track records (auditable daily CSVs)
-
-Anyone can re-derive Sharpe / DD / hit-rate from raw numbers. In [`live/track_record/`](live/track_record/):
-
-- `strategy_01_eurusd_track_record.csv` (3,912 rows, 12 cols)
-- `strategy_02_gbpusd_track_record.csv` (3,911 rows, 12 cols)
-- `strategy_06_usdcad_track_record.csv` (3,911 rows, 12 cols)
-- `strategy_10_portfolio_core4_track_record.csv` (3,881 rows)
-- `strategy_12_portfolio_calibrated_track_record.csv` (3,881 rows)
-- `strategy_13_cot_extreme_long_short_track_record.csv` (3,390 rows)
+Daily return CSVs for **working and borderline** strategies are in [`backtest_records/`](backtest_records/) — open in any spreadsheet and recompute the metrics. Rejected strategies' CSVs are not committed; each script regenerates its own. `live/` is reserved for real paper-trading logs.
 
 ---
 
@@ -123,26 +102,24 @@ Anyone can re-derive Sharpe / DD / hit-rate from raw numbers. In [`live/track_re
 
 | Layer | Evidence |
 |---|---|
-| **G10 FX spot is noise at daily/weekly horizons on public data** | Rate-diff (look-ahead), momentum, reversal, TA, commodity lead-lag, DOL — all fail with correct timestamps |
-| **Edges exist where trends are real** | Crypto momentum (#35, robust per #37), trend on commodities/crypto (#25/#28/#29) |
+| **G10 FX spot is noise at daily/weekly horizons on public data** | Rate-diff (look-ahead), momentum, reversal, TA, commodity lead-lag, DOL, value, business cycle — all fail or are too weak with correct timestamps |
+| **Edges exist where trends are real** | Crypto momentum (#35 → #42), trend on commodities/crypto (#25/#28/#29), multi-asset TSMOM as a diversifier (#43) |
 | **Rigour checks catch artefacts** | #19, #21 and the FX timestamp audit turned the repo's biggest Sharpes into documented negatives |
-| **Results are auditable** | Every strategy has a standalone script; daily CSVs in `live/track_record/` |
-
----
+| **Results are auditable** | Every strategy has a standalone script; daily CSVs for the live candidates in `backtest_records/` |
 
 ## How to read this repo
 
-- **5-minute glance**: this file + main [`README.md`](README.md) + [`reports/regressions_all_pairs.png`](reports/regressions_all_pairs.png)
-- **30-minute deep-dive**: [`strategies/README.md`](strategies/README.md) for per-strategy details + [`strategies/PLAN.md`](strategies/PLAN.md) for the original extension plan
-- **Verification**: any CSV in [`live/track_record/`](live/track_record/) — open in any spreadsheet, recompute the metrics yourself
-- **Reproducing**: each strategy has a standalone script in [`strategies/`](strategies/). Requires `FRED_API_KEY` for Strategy #1; rest use cached TVC yields.
+- **5 minutes**: this table + the main [`README.md`](README.md) + [`reports/strategy_dashboard.png`](reports/strategy_dashboard.png)
+- **Deep dive**: the Strategy Details below; [`strategies/README.md`](strategies/README.md) (frozen) for #1–#19
+- **Verify**: any CSV in [`backtest_records/`](backtest_records/)
+- **Reproduce**: each strategy is a standalone script in [`strategies/`](strategies/); #40+ build on [`backtest/common.py`](backtest/common.py)
 
 ## Stack
 
-- **Data**: FRED (US rates, VIX), ECB SDW (Euro-area yield), TradingView via `tvDatafeed` (international 2Y), yfinance (FX spot), CFTC TFF (positioning)
+- **Data**: FRED (rates, VIX, OECD CLI, BIS REER), ECB SDW, TradingView via `tvDatafeed` (international 2Y), yfinance (FX, ETFs, crypto, Indian equities), CFTC TFF
 - **Python**: pandas, numpy, scipy, statsmodels, matplotlib
-- **Backtesting**: bespoke walk-forward + event-driven engines (no `backtrader` / `vectorbt` dependency for the published strategies)
-- **Cost model**: legacy strategies 5 pips round-trip; #40+ use per-pair bps (`backtest/common.py::FX_COST_BPS_RT`, EURUSD 4 bps … SEK/NOK 10 bps)
+- **Backtesting**: standalone scripts; #40+ share `backtest/common.py` (aligned FX, despiking, carry accrual, hold-out, pre-registered criteria)
+- **Cost model**: #1–#39 5 pips round-trip; #40+ per-pair bps (EURUSD 4 … SEK/NOK 10), ETFs 10 bps, crypto 30 bps, India 30 bps
 
 ---
 
@@ -711,3 +688,121 @@ The proper deployment rule for the overlay is therefore: **only apply it to base
 **Script.** [`strategies/strat_30_crash_filter_on_25.py`](strategies/strat_30_crash_filter_on_25.py)
 **Track record CSV.** [`live/track_record/strategy_30_crash_filter_on_25_track_record.csv`](live/track_record/strategy_30_crash_filter_on_25_track_record.csv)
 **Equity curve.** [`reports/strategy_30_crash_filter_on_25.png`](reports/strategy_30_crash_filter_on_25.png)
+
+---
+
+## Notes for #21 and #31–#48 (moved from the index, unedited)
+
+### #21 — EURUSD rate-diff with 1-day lag (rigour check)
+
+*−0.58*
+
+**The most important verification in the repo.** Confirms #1's edge was timing artefact; entire rate-diff family flagged. Signal corr collapses from +0.27 to +0.028.
+
+### #31 — Cross-sectional 5-day mean reversion on G10 FX (long bottom-2 losers, short top-2 winners, weekly rebalance)
+
+*2010-2024 · −0.19*
+
+**The cleanest falsification of "FX is exploitable at the weekly horizon."** Mirror image of #11 (momentum, Sharpe −0.34). If #11 lost because of mean reversion, #31 should have won. It didn't. **Therefore G10 FX is neither trending nor mean-reverting at 1-week horizon — just noise.** Gross Sharpe +0.08 (tiny MR effect exists), but 28.45% cumulative cost drag destroys it. Daily skew +0.25 (proper MR signature, but doesn't pay). 6th independent TA-in-FX confirmation.
+
+### #32 — Cross-sectional inflation-differential momentum on G10 FX (Taylor rule, monthly rebalance)
+
+*2010-2024 · −0.13*
+
+**First strategy in repo to USE the new `data/economic.py` ingestion layer.** Long top-3 currencies / short bottom-3 by CPI YoY differential vs US. Net Sharpe −0.13, gross Sharpe −0.13 (NOT a cost problem — cost drag only 0.27%). Signal "gets stuck": AU/NZ long 99%/92% of days, CHF short 98% — driven by **structural** inflation differences across countries, not **dynamic** Taylor-rule responses. Falsifies the cross-sectional reading of Molodtsova-Papell (2009) on post-GFC data. 7th independent TA-on-FX confirmation.
+
+### #33 — SPY 200-DMA tactical allocation (Faber 2007) — first US-equity strategy
+
+*2010-2024 · 0.88 (vs B&H 0.84)*
+
+**Borderline. Sharpe marginally better than buy-and-hold (+0.04), but the rule sacrifices 4.3pp/yr return and 47% of cumulative wealth.** MaxDD genuinely shrinks (−33.7% → −20.7%, +13pp). Calmar wins (+0.06). BUT **conditional Sharpe test FAILS**: on out-of-market days SPY would have earned +0.71 Sharpe — the rule sits out positive periods, not negative ones. Daily skew worsens (−0.52 → −0.81). Faber's 1972-2005 published edge has decayed in the post-GFC structural-bull regime.
+
+### #34 — Faber 5-asset GTAA (SPY, EFA, AGG, VNQ, GLD) — the "correct" full Faber 2007 spec
+
+*2010-2024 · 0.61*
+
+**The definitive Faber-in-modern-data rejection.** Loses to ALL THREE benchmarks: −0.22 vs SPY B&H, −0.29 vs 60/40, and **−0.10 even vs the equal-weight passive 5-asset portfolio** (same universe, just held). Ann return only +3.80% vs SPY's +13.80% and 60/40's +9.20%. MaxDD genuinely tiny (−10.9%) but at massive return cost. Conditional Sharpe test fails: EW-5 passive earned +0.59 on days strategy was <50% invested vs strategy's −0.10. Diversification doesn't rescue the timing signal — it spreads the same wrong-side-of-market bias across 5 assets. Faber's 1972-2005 edge is dead in the post-GFC low-vol structural bull.
+
+### #35 — Crypto cross-sectional 3-month momentum (10 majors, long-top-3 EW, monthly rebal)
+
+*2015-2024 · **1.44** ⚠ hold-out 2025+ SR −0.24, MaxDD −76% — use #42*
+
+**Beats every benchmark cleanly: BTC B&H (1.24), ETH B&H (0.69), and equal-weight passive of the same universe (1.37). IR vs EW passive +0.35 → the momentum tilt earns its keep above naive diversification.** Ann return 119.6% vs BTC 84.6% vs EW passive 107.9%. Cumulative excess over EW: +83pp. **Caveats:** MaxDD −87.9% (no risk overlay); edge concentrated in 2021 (Sharpe 3.38 vs EW 3.06) — much more marginal in 2019–20 recovery and 2023–24. Not a timing artefact (yfinance-only, no rate data). First clean directional win in the repo. **Robustness confirmed by #37.**
+
+### #36 — Crash filter overlay (VIX + self-momentum, same spec as #22/#29) on #35
+
+*2015-2024 · 1.45 (vs base 1.44, IR **−0.64**)*
+
+**Second cross-spec rejection of the VIX overlay** (after #30 on Turtle). MaxDD only +1.4pp better. **Conditional Sharpe test FAILS**: on the 1,377 binding days (38% of sample), base #35 earned +1.03 Sharpe, filtered dropped to +0.81 — filter removed GOOD days, not bad ones. VIX and crypto crashes are decorrelated: 2018 crypto winter = low VIX; 2022 crypto crash = moderate VIX (rate-hike environment, not equity panic). Sub-period damage: 2018 −0.40, 2022 −0.52. Silver lining: skew flipped −0.07 → +0.26. Deployment rule now doubly confirmed: apply the VIX+self-mom overlay only to bases where conditional-Sharpe binding-day return is negative.
+
+### #37 — Parameter robustness sweep on #35 (6 lookbacks × 4 top-N = 24 backtests)
+
+*2015-2024 · **min +1.16 / med +1.35 / max +1.44***
+
+**All 24 cells of the (lookback × top-N) grid have net Sharpe > 1.0.** Sweep: LB ∈ {30, 60, 90, 120, 180, 252} × N ∈ {2, 3, 4, 5}. Baseline neighbours (60/90/120d × 2/3/4 = 9 cells) minimum Sharpe +1.16 — the baseline win at 1.44 is the peak of a broad plateau, not a spike. All four pre-registered pass criteria met (median ≥ 1.0, ≥50% cells > 1.0, neighbours ≥ 0.9, no negative cells). **Conclusively rules out overfit as the explanation for the #35 win.** The crypto cross-sectional momentum edge exists across the full grid, not just at one point.
+
+### #38 — Indian equities — Nifty 100 Low-Vol 30 (annual rebalance, long-only) — first India strategy in repo
+
+*2010-2024 · **1.34***
+
+**Net Sharpe 1.34 vs Nifty 50 B&H 0.71** (+0.63 delta); CAGR 17.09% vs 10.75%; MaxDD −27.3% vs −38.4% (+11pp better); Calmar 0.61. **3 of 4 pre-registered criteria pass.** ⚠ Two important caveats: (a) Universe is **survivorship-biased** — uses current Nifty 100 constituents, not point-in-time (doc's cited 0.47 Sharpe used proper point-in-time NSE data); (b) **IR vs equal-weight of same 98-ticker universe is −0.42** — equal-weight EARNS MORE (CAGR 19.79% vs 17.09%), and strategy Sharpe only wins by 0.08 (vs EW 1.26). This means the source of alpha is the size/equal-weight tilt vs cap-weighted Nifty 50, NOT the volatility ranking itself. Deployable as a defensive Indian large-cap vehicle; not a factor validation of low-vol. First strategy to use the newly-merged research/india_equities.md as literature basis.
+
+### #39 — US SPDR sector 12-1 momentum (Jegadeesh-Titman on 11 sectors, long-top-3 EW, monthly)
+
+*2010-2024 · **0.65***
+
+**Rejected — loses to both benchmarks.** SPY B&H Sharpe 0.82, EW sectors 0.74. IR vs SPY −0.31, IR vs EW sectors −0.07. Only 2 of 4 pre-registered criteria pass (SR > 0.5 ✓, 5/5 sub-periods positive ✓; beats SPY ✗, IR vs EW > 0.20 ✗). Sub-period detail: strategy wins the 2021-22 inflation regime (+0.74 vs SPY +0.23) but loses catastrophically in 2023-24 AI/hike regime (+0.98 vs SPY +1.83) — mega-cap concentration in AI winners killed diversified sector rotation. Same signal shape as #35 (worked on crypto with IR +0.35 vs EW), opposite outcome on US sectors — **sector momentum specifically is decayed in the post-2010 US market**, not cross-sectional momentum as a class. Consistent with the "factor crowding + mega-cap AI concentration" thesis in the quant literature. First cited use of research/fx_signals_advanced.md's cross-sectional momentum framework outside FX.
+
+### #40 — Dollar carry factor — time-series DOL (Lustig-Roussanov-Verdelhan 2014), monthly, aligned FX + carry
+
+*0.10*
+
+0/4 pre-registered criteria. Only 2 direction switches in 14y — effectively a long-USD regime bet (IR −0.24 vs passive long USD). Hold-out 2025+ SR −0.35.
+
+### #41 — Commodity → commodity-FX, weekly (copper→AUD, Brent→NOK, WTI→CAD), aligned FX + carry
+
+*−0.28*
+
+0/4 criteria. All three legs negative (AUD −0.42, NOK −0.10, CAD −0.05). Hold-out SR −1.05. The clean re-test of #17's idea — no lagged edge.
+
+### #42 — Crypto momentum #35 + vol-target (50%) + BTC 200-DMA regime — the risk layer
+
+*2015-2024 · **1.68***
+
+**4/4 pre-registered criteria.** MaxDD −88% → **−43%**, Sharpe 1.44 → 1.68, Calmar 1.36 → 1.66, avg exposure 0.42. Each layer helps alone (vol-target SR 1.46 / MaxDD −67%; regime SR 1.57 / −75%). Sweep of DMA 100–250 × target 40–60%: all 12 cells SR 1.62–1.77, MaxDD −32% to −49%, hold-out positive. **Hold-out 2025+: SR +0.21, MaxDD −37% — while the unprotected #35 base lost (SR −0.24, MaxDD −76%).**
+
+### #43 — Diversified TSMOM (Moskowitz-Ooi-Pedersen 2012) on 25 ETFs — equity, bonds, commodities, FX; 40% instrument vol, monthly
+
+*2011-2024 · **0.29***
+
+3/4 criteria — misses SR > 0.4. **Crisis alpha +2.95% in SPY's worst-decile months**, corr with SPY −0.04, all four asset classes contribute (SR 0.12–0.26 each), hold-out SR +0.92. A diversifier, not a standalone. ETFs used because Yahoo `=F` futures carry fake roll jumps.
+
+### #44 — Business-cycle differential FX (OECD CLI level, Colacito-Riddiough-Sarno 2020), 6 ccys, monthly
+
+*2011-2024 · **0.14***
+
+3/4 criteria — misses SR > 0.3. Right sign in 3/4 regimes, not stuck (max same-leg 49%), hold-out SR +0.48, IR +0.49 vs passive. Too weak to use; CLI is latest-vintage (mildly optimistic). Only 6 economies still published.
+
+### #45 — FX value — 5y real-exchange-rate reversal (AMP 2013, BIS REER), 10 ccys, monthly
+
+*−0.15*
+
+1/4 criteria. Uncorrelated with carry (+0.02) as hoped, but loses money; −1.30 in 2022-24.
+
+### #46 — FX carry + momentum + value equal-weight (AMP 2013)
+
+*0.05*
+
+2/4 criteria. Pillars are diversifying (value/momentum −0.40) but three near-zero edges average to near zero. Hold-out +0.66 on 1.3% vol. Closes the classic FX factor set.
+
+### #47 — India 12-1 momentum, Nifty 100 top-30, quarterly, long-only
+
+*2011-2024 · **1.42***
+
+3/4 criteria. Beats Nifty (0.67) and — unlike #38 — **beats equal-weight of its own universe (IR +0.62)**; all 4 sub-periods > 1.2. **Fails hold-out: 2025+ SR −0.40 vs EW +0.25.** Survivorship bias (current constituents) flatters momentum most of all — needs point-in-time constituents before any trust.
+
+### #48 — Short VIX futures (SVXY) only in contango — VIX/VIX3M < 1 at D−1 close, else cash; first volatility strategy
+
+*2011-2024 · **0.63***
+
+4/4 pre-registered criteria, but borderline by repo standard (< 1). MaxDD −95% (SVXY B&H) → −66%; avoided the −83% day of 6-Feb-2018 but took the −32% day before; took −21% on 5-Aug-2024. 93% time in market, 12 switches/yr, vol 47%, skew −1.42. Hold-out SR +0.60. **Same-day VIX (15-min look-ahead, VIX closes 4:15pm) would show 0.82** — timing discipline costs 0.19 Sharpe. Below SPY (0.94) on Sharpe; needs sizing before use.

@@ -55,7 +55,7 @@ logging.getLogger("yfinance").setLevel(logging.ERROR)
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 REPORTS = REPO / "reports"
-TRACK = REPO / "live" / "track_record"
+TRACK = REPO / "backtest_records"
 
 # ── Strategy parameters (Turtle System 1, canonical) ─────────────────────────
 ATR_PERIOD            = 20         # N — Turtle's 20-day average true range

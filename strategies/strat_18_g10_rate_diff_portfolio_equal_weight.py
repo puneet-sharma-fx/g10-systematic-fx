@@ -24,7 +24,7 @@ from strat_10_g10_rate_diff_portfolio import run
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
-TRACK = REPO / "live" / "track_record"
+TRACK = REPO / "backtest_records"
 
 
 if __name__ == "__main__":

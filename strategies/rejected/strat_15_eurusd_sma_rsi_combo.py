@@ -30,7 +30,7 @@ logging.getLogger("yfinance").setLevel(logging.ERROR)
 HERE = Path(__file__).resolve().parent          # strategies/rejected/
 REPO = HERE.parent.parent                       # repo root
 REPORTS = REPO / "reports" / "rejected"
-TRACK = REPO / "live" / "track_record" / "rejected"
+TRACK = REPO / "backtest_records" / "rejected"
 
 START                  = "2010-01-04"
 END                    = "2024-12-31"
